@@ -17,3 +17,6 @@ wrench-turn
 
 # Go workspace file
 go.work
+
+# Private env
+.env

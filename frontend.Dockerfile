@@ -2,6 +2,7 @@ FROM node:20-alpine AS build
 
 WORKDIR /app 
 COPY ./frontend /app/
+COPY ./.env /app/
 RUN npm ci 
 RUN npm run build 
 
