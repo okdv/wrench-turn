@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
+	"github.com/okdv/wrench-turn/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,7 +55,7 @@ func CreateJWT(id int64, username string, isAdmin bool, cookieName string) (*htt
 func RetrieveAuthInfo(creds *models.Credentials) (*int64, *string, *bool, *[]byte, bool, error, int) {
 	// retrieve auth info from db
 	userId, username, isAdminInt, hashed, err := db.GetAuthInfoByUsername(creds.Username)
-	isAdmin := *isAdminInt != 0
+	isAdmin := utils.IntToBool(*isAdminInt)
 	// throw error if present
 	if err != nil {
 		return nil, nil, nil, nil, false, err, 500

@@ -14,3 +14,16 @@ func UrlBuilder(proto string, domain string, port string) string {
 	}
 	return url
 }
+
+// IntToBool util takes an int, returns bool (0=false, 1=true)
+func IntToBool(i int) bool {
+	return i != 0
+}
+
+// BoolToInt util takes a bool, returns an int 0=false, 1=true)
+func BoolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
