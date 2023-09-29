@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
+	"github.com/okdv/wrench-turn/controllers"
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/utils"
 )
@@ -41,6 +42,9 @@ func main() {
 	os.Setenv("FRONTEND_URL", utils.UrlBuilder(os.Getenv("FRONTEND_PROTO"), os.Getenv("FRONTEND_DOMAIN"), os.Getenv("FRONTEND_PORT")))
 	os.Setenv("API_URL", utils.UrlBuilder(os.Getenv("API_PROTO"), os.Getenv("API_DOMAIN"), os.Getenv("API_PORT")))
 
+	// initiate controllers
+	authController := controllers.NewAuthController()
+
 	// initiate router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -59,6 +63,9 @@ func main() {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Welcome to the WrenchTurn API")
 	})
+
+	r.Post("/auth", authController.Auth)
+	r.Get("/logout", authController.Logout)
 
 	// serve router
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("API_PORT"))
