@@ -18,4 +18,4 @@ services:
       context: .
       dockerfile: frontend.Dockerfile 
     ports: 
-      - 8888:80
+      - 5173:80
