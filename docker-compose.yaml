@@ -1,0 +1,21 @@
+version: '3'
+services:
+  backend:
+    image: wrench-turn/backend:latest
+    container_name: wrench-turn_backend
+    restart: unless-stopped 
+    build: 
+      context: . 
+      dockerfile: backend.Dockerfile 
+    ports:
+     - 8080:8080
+
+  frontend: 
+    image: wrench-turn/frontend:latest 
+    container_name: wrench-turn_frontend 
+    restart: unless-stopped 
+    build: 
+      context: .
+      dockerfile: frontend.Dockerfile 
+    ports: 
+      - 8888:80
