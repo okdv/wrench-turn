@@ -11,11 +11,13 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
+	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/utils"
 )
 
 func main() {
 	var err error
+	// check for env type, default to dev, load env file based on env type
 	if os.Getenv("GO_ENV") == "production" {
 		err = godotenv.Load(".env")
 		log.Print("Initializing WrenchTurn production environment...")
@@ -23,10 +25,16 @@ func main() {
 		err = godotenv.Load(".env.dev")
 		log.Print("Initializing WrenchTurn development environment...")
 	}
-	// load env
 
 	if err != nil {
 		log.Fatalf("Unable to load .env file: %v", err)
+	}
+
+	// connect to db
+	err = db.ConnectDatabase()
+	if err != nil {
+		log.Fatal("Unable to connect to SQLite Database")
+		return
 	}
 
 	// construct new env variables
