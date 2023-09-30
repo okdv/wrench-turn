@@ -14,6 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var jwtKey = []byte(os.Getenv("JWT_KEY"))
+
 // CreateJWT
 // Takes userID, username, admin rights and cookie name, creates and returns JWT containing auth info
 func CreateJWT(id int64, username string, isAdmin bool, cookieName string) (*http.Cookie, error) {
@@ -31,7 +33,7 @@ func CreateJWT(id int64, username string, isAdmin bool, cookieName string) (*htt
 	// create new JWT from claim
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// get signed JWT as string
-	tokenStr, err := token.SignedString(os.Getenv("JWT_KEY"))
+	tokenStr, err := token.SignedString(jwtKey)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +50,26 @@ func CreateJWT(id int64, username string, isAdmin bool, cookieName string) (*htt
 	}
 	// return cookie
 	return cookie, nil
+}
+
+// VerifyJWT
+// Take JWT as arg, parse, retrieve and return JWT claims
+func VerifyJWT(token string) (*models.Claims, error) {
+	claims := &models.Claims{}
+	// parse JWT
+	parsedJWT, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	// parse into claims, confirm JWT valid, return claims
+	if claims, ok := parsedJWT.Claims.(*models.Claims); ok && parsedJWT.Valid {
+		return claims, nil
+	} else {
+		log.Printf("JWT Invalid: %v", claims)
+		return nil, errors.New("JWT Invalid")
+	}
 }
 
 // RetrieveAuthInfo
