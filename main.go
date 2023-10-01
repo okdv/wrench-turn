@@ -44,6 +44,7 @@ func main() {
 
 	// initiate controllers
 	authController := controllers.NewAuthController()
+	userController := controllers.NewUserController()
 
 	// initiate router
 	r := chi.NewRouter()
@@ -66,6 +67,13 @@ func main() {
 
 	r.Post("/auth", authController.Auth)
 	r.Get("/logout", authController.Logout)
+
+	r.Get("/users", userController.ListUsers)
+	r.Get("/users/{username}", userController.GetUserByUsername)
+	r.Delete("/users/{username}", authController.Verify(userController.DeleteUser))
+	r.Post("/users/create", userController.CreateUser)
+	r.Post("/users/edit", authController.Verify(userController.EditUser))
+	r.Post("/users/updatePassword", authController.Verify(userController.UpdatePassword))
 
 	// serve router
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("API_PORT"))
