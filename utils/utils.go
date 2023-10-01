@@ -1,5 +1,11 @@
 package utils
 
+import (
+	"errors"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
 // UrlBuilder util takes possible parts of url and returns full url
 func UrlBuilder(proto string, domain string, port string) string {
 	var url string
@@ -26,4 +32,20 @@ func BoolToInt(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// ValidateAndHashPassword util takes password as string, returns bcrypt hash and error
+func ValidateAndHashPassword(password string) ([]byte, error) {
+	if len(password) > 7 {
+		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, errors.New("Unable to hash password")
+		}
+		err = bcrypt.CompareHashAndPassword(hashed, []byte(password))
+		if err != nil {
+			return nil, errors.New("Hash does not match new password")
+		}
+		return hashed, nil
+	}
+	return nil, errors.New("Password must be more than 7 characters")
 }
