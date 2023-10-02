@@ -160,10 +160,11 @@ func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *str
 // Take NewUser and hashed PW as arguments, insert them into db
 func CreateUser(newUser models.NewUser, hashedPw []byte) (*int64, error) {
 	// insert into db, return any errors
-	res, err := DB.Exec("INSERT INTO user(Username, Email, Hashed_pw) VALUES (?,?,?)",
+	res, err := DB.Exec("INSERT INTO user(Username, Email, Hashed_pw, Is_admin) VALUES (?,?,?,?)",
 		newUser.Username,
 		newUser.Email,
 		hashedPw,
+		newUser.Is_admin,
 	)
 	if err != nil {
 		log.Printf("DB Execution Error: %s", err)

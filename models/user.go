@@ -12,6 +12,7 @@ type Passwords struct {
 type NewUser struct {
 	Username string  `json:"username"`
 	Password string  `json:"password"`
+	Is_admin *int    `json:"isAdmin"`
 	Email    *string `json:"email"`
 }
 

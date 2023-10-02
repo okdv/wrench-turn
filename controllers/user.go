@@ -48,9 +48,10 @@ func (uc *UserController) ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateUser
-// Takes NewUser as request body, calls CreateUser service, returns User
+// Takes NewUser as request body, calls CreateUser service - adding admin status to user if no admin exists, returns User
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser *models.NewUser
+	isAdmin := 0
 	// get user data from request body
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
@@ -58,7 +59,18 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
-
+	// get list of admin  users, update newUser to be admin if none exist
+	adminStr := "1"
+	adminUsers, err := services.ListUsers(nil, nil, &adminStr, nil, nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Unable check if existing admin users: %v", err)
+		return
+	}
+	if len(adminUsers) == 0 {
+		isAdmin = 1
+	}
+	newUser.Is_admin = &isAdmin
 	// insert into db and return created user via corresponding service
 	user, err := services.CreateUser(*newUser)
 	if err != nil || user == nil {
