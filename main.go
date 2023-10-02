@@ -63,6 +63,7 @@ func main() {
 	// establish api routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Welcome to the WrenchTurn API")
+		return
 	})
 
 	r.Post("/auth", authController.Auth)

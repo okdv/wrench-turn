@@ -3,15 +3,14 @@ package models
 import "time"
 
 type Passwords struct {
-	Username           string  `json:"username"`
-	CurrentPassword    *string `json:"currentPassword"`
-	NewPassword        string  `json:"newPassword"`
-	ConfirmNewPassword string  `json:"confirmNewPassword"`
+	Username        string  `json:"username"`
+	CurrentPassword *string `json:"currentPassword"`
+	NewPassword     *string `json:"newPassword"`
 }
 
 type NewUser struct {
 	Username string  `json:"username"`
-	Password string  `json:"password"`
+	Password *string `json:"password"`
 	Is_admin *int    `json:"isAdmin"`
 	Email    *string `json:"email"`
 }

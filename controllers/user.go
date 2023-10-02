@@ -48,7 +48,7 @@ func (uc *UserController) ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateUser
-// Takes NewUser as request body, calls CreateUser service - adding admin status to user if no admin exists, returns User
+// Takes NewUser as request body, validates it, calls CreateUser service - adding admin status to user if no admin exists, returns User
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var newUser *models.NewUser
 	isAdmin := 0
@@ -59,7 +59,8 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
-	// get list of admin  users, update newUser to be admin if none exist
+	// confirm username and password are not null
+	// get list of admin users, upgrade newUser to be admin if none exist
 	adminStr := "1"
 	adminUsers, err := services.ListUsers(nil, nil, &adminStr, nil, nil)
 	if err != nil {
@@ -187,7 +188,7 @@ func (uc *UserController) UpdatePassword(w http.ResponseWriter, r *http.Request,
 		fmt.Fprint(w, "Invalid request body")
 		return
 	}
-	// if request is not admin
+	// if request is not admin, run additional validations
 	if c.Is_admin == false {
 		// err if no current password
 		if passwords.CurrentPassword == nil {
@@ -201,15 +202,24 @@ func (uc *UserController) UpdatePassword(w http.ResponseWriter, r *http.Request,
 			fmt.Fprint(w, "User passwords can only be updated by admins and the user themselves")
 			return
 		}
-	}
-	// if no currentPassword provided, check for admin status
-	if passwords.CurrentPassword == nil && c.Is_admin == false {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprint(w, "Unless admin, current password must be provided")
-		return
+		// retrieve auth info (including bool for if passwords match)
+		_, _, _, _, valid, err, _ := services.RetrieveAuthInfo(&models.Credentials{
+			Username: passwords.Username,
+			Password: *passwords.CurrentPassword,
+		})
+		if !valid {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprint(w, "Incorrect password")
+			return
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Unable to validate current password: %v", err)
+			return
+		}
 	}
 	// call UpdatePassword service
-	err = services.UpdatePassword(passwords)
+	err = services.UpdatePassword(passwords.Username, passwords.NewPassword)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to update password: %v", err)

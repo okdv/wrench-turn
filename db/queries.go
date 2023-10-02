@@ -158,12 +158,12 @@ func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *str
 
 // CreateUser
 // Take NewUser and hashed PW as arguments, insert them into db
-func CreateUser(newUser models.NewUser, hashedPw []byte) (*int64, error) {
+func CreateUser(newUser models.NewUser, password *[]byte) (*int64, error) {
 	// insert into db, return any errors
 	res, err := DB.Exec("INSERT INTO user(Username, Email, Hashed_pw, Is_admin) VALUES (?,?,?,?)",
 		newUser.Username,
 		newUser.Email,
-		hashedPw,
+		password,
 		newUser.Is_admin,
 	)
 	if err != nil {

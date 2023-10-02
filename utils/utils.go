@@ -35,17 +35,17 @@ func BoolToInt(b bool) int {
 }
 
 // ValidateAndHashPassword util takes password as string, returns bcrypt hash and error
-func ValidateAndHashPassword(password string) ([]byte, error) {
-	if len(password) > 7 {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+func ValidateAndHashPassword(password *string) (*[]byte, error) {
+	if password != nil {
+		hashed, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 		if err != nil {
 			return nil, errors.New("Unable to hash password")
 		}
-		err = bcrypt.CompareHashAndPassword(hashed, []byte(password))
+		err = bcrypt.CompareHashAndPassword(hashed, []byte(*password))
 		if err != nil {
 			return nil, errors.New("Hash does not match new password")
 		}
-		return hashed, nil
+		return &hashed, nil
 	}
-	return nil, errors.New("Password must be more than 7 characters")
+	return nil, nil
 }

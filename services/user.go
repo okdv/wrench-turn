@@ -1,8 +1,6 @@
 package services
 
 import (
-	"errors"
-
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
 	"github.com/okdv/wrench-turn/utils"
@@ -67,40 +65,13 @@ func EditUser(editedUser models.User) (*models.User, error) {
 
 // UpdatePassword
 // Take Passwords as arg, process it, pass to UpdatePassword query
-func UpdatePassword(passwords *models.Passwords) error {
-	// if current password provided, validate it
-	if passwords.CurrentPassword != nil {
-		// create credentials
-		creds := &models.Credentials{
-			Username: passwords.Username,
-			Password: *passwords.CurrentPassword,
-		}
-		// retrieve auth info (including bool for if passwords match)
-		_, _, _, _, valid, err, _ := RetrieveAuthInfo(creds)
-		if err != nil {
-			return err
-		}
-		if !valid {
-			return errors.New("Incorrect password")
-		}
-	}
-	// check if new passwords match
-	if passwords.NewPassword != passwords.ConfirmNewPassword {
-		return errors.New("New passwords do not match")
-	}
-	// if no new passwords, query as NULL, otherwise hash and query as hash
-	var newPassword *[]byte
-	if len(passwords.NewPassword) == 0 {
-		newPassword = nil
-	} else {
-		// hash new password
-		hashedPw, err := utils.ValidateAndHashPassword(passwords.NewPassword)
-		if err != nil {
-			return err
-		}
-		newPassword = &hashedPw
+func UpdatePassword(username string, newPassword *string) error {
+	// validate and generate hashed pw
+	hashed, err := utils.ValidateAndHashPassword(newPassword)
+	if err != nil {
+		return err
 	}
 	// call db query
-	err := db.UpdatePassword(passwords.Username, newPassword)
+	err = db.UpdatePassword(username, hashed)
 	return err
 }
