@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -61,14 +62,34 @@ func main() {
 	r.Use(corsHandler.Handler)
 
 	// establish api routes
+	// general routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "Welcome to the WrenchTurn API")
 		return
 	})
-
+	r.Get("/env", func(w http.ResponseWriter, r *http.Request) {
+		// create slice of PUBLIC env vars
+		envVars := map[string]string{
+			"FRONTEND_URL": os.Getenv("FRONTEND_URL"),
+			"API_URL":      os.Getenv("API_URL"),
+			"ENV":          os.Getenv("NODE_ENV"),
+		}
+		// convert into json response
+		jsonData, err := json.Marshal(envVars)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "Unable to convert env to JSON response")
+			return
+		}
+		// respond with json
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
+	})
+	// auth routes
 	r.Post("/auth", authController.Auth)
 	r.Get("/logout", authController.Logout)
-
+	// user routes
 	r.Get("/users", userController.ListUsers)
 	r.Get("/users/{username}", userController.GetUserByUsername)
 	r.Delete("/users/{username}", authController.Verify(userController.DeleteUser))
