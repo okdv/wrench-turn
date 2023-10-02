@@ -69,6 +69,18 @@ func GetUserByUsername(username string) (*models.User, error) {
 	return &user, nil
 }
 
+// GetHashedPasswordByUsername
+// Take username as arg, return Hashed_pw from user table where username matches
+func GetHashedPasswordByUsername(username string) (*[]byte, error) {
+	var hashed *[]byte
+	err := DB.QueryRow("SELECT hashed_pw FROM user WHERE username=?", username).Scan(&hashed)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	return hashed, nil
+}
+
 // ListUsers
 // Take filters as args, return User list
 func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *string, sort *string) ([]*models.User, error) {

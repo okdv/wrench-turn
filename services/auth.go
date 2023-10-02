@@ -77,15 +77,17 @@ func VerifyJWT(token string) (*models.Claims, error) {
 func RetrieveAuthInfo(creds *models.Credentials) (*int64, *string, *bool, *[]byte, bool, error, int) {
 	// retrieve auth info from db
 	userId, username, isAdminInt, hashed, err := db.GetAuthInfoByUsername(creds.Username)
-	isAdmin := utils.IntToBool(*isAdminInt)
-	// throw error if present
-	if err != nil {
-		return nil, nil, nil, nil, false, err, 500
-		// throw error if no auth info retrieved
-	} else if userId == nil || username == nil {
-		return nil, nil, nil, nil, false, errors.New("No user found"), 404
-		// throw exception auth if there is no password in db
-	} else if hashed == nil || len(*hashed) == 0 {
+	var isAdmin bool
+	if isAdminInt == nil {
+		isAdmin = false
+	} else {
+		isAdmin = utils.IntToBool(*isAdminInt)
+	}
+	// if userid or username are nil, throw 404
+	if userId == nil || username == nil || err != nil {
+		return nil, nil, nil, nil, false, err, 404
+	}
+	if hashed == nil || len(*hashed) == 0 {
 		log.Println("No existing password for user, automatic authentication done based on username")
 		return userId, username, &isAdmin, hashed, true, nil, 200
 	}
