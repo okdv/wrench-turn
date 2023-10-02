@@ -24,10 +24,11 @@ func (uc *UserController) ListUsers(w http.ResponseWriter, r *http.Request) {
 	// get URL query params
 	jobId := r.URL.Query().Get("job")
 	vehicleId := r.URL.Query().Get("vehicle")
+	isAdmin := r.URL.Query().Get("admin")
 	searchStr := r.URL.Query().Get("q")
 	sort := r.URL.Query().Get("sort")
 	// call ListUsers service
-	users, err := services.ListUsers(&jobId, &vehicleId, &searchStr, &sort)
+	users, err := services.ListUsers(&jobId, &vehicleId, &isAdmin, &searchStr, &sort)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, "Unable to retrieve any users")
@@ -57,6 +58,7 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
+
 	// insert into db and return created user via corresponding service
 	user, err := services.CreateUser(*newUser)
 	if err != nil || user == nil {

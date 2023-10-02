@@ -71,7 +71,7 @@ func GetUserByUsername(username string) (*models.User, error) {
 
 // ListUsers
 // Take filters as args, return User list
-func ListUsers(jobId *string, vehicleId *string, searchStr *string, sort *string) ([]*models.User, error) {
+func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *string, sort *string) ([]*models.User, error) {
 	var joins []string
 	var wheres []string
 	var likes []Like
@@ -79,6 +79,10 @@ func ListUsers(jobId *string, vehicleId *string, searchStr *string, sort *string
 	var orderBy = "u.updated_at DESC"
 	// establish basic query
 	q := "SELECT * FROM user AS u"
+	// if isAdmin provided, add where to query
+	if isAdmin != nil && len(*isAdmin) > 0 {
+		wheres = append(wheres, "u.is_admin="+*isAdmin)
+	}
 	// if job ID provided join by userID where jobID is present
 	if jobId != nil && len(*jobId) > 0 {
 		joins = append(joins, "JOIN user_job AS uj ON u.id = uj.user")

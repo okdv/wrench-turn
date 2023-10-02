@@ -28,8 +28,8 @@ func CreateUser(newUser models.NewUser) (*models.User, error) {
 
 // ListUsers
 // Takes URL query params as args, passes to ListUsers query, returns User list
-func ListUsers(jobId *string, vehicleId *string, searchStr *string, sort *string) ([]*models.User, error) {
-	users, err := db.ListUsers(jobId, vehicleId, searchStr, sort)
+func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *string, sort *string) ([]*models.User, error) {
+	users, err := db.ListUsers(jobId, vehicleId, isAdmin, searchStr, sort)
 	return users, err
 }
 
