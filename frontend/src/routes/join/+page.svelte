@@ -1,12 +1,21 @@
 <script lang="ts">
 	import { apiRequest } from "$lib/api";
 
-    let newUserForm = {
-        username: null,
-        password: null,
-        confirmPassword: null,
-        email: null,
+    class NewUser {
+        username: string | null
+        password: string | null
+        confirmPassword: string | null
+        email: string | null
+
+        constructor(username?: string | null, password?: string | null, confirmPassword?: string | null, email?: string | null) {
+            this.username = username ?? null 
+            this.password = password ?? null 
+            this.confirmPassword = confirmPassword ?? null 
+            this.email = email ?? null 
+        }
     }
+
+    let newUserForm = new NewUser()
 
     const handleSubmit = async() => {
         if (newUserForm.username == null || newUserForm.username == "") {
@@ -23,7 +32,13 @@
             email: newUserForm.email
         }
         const res = await apiRequest('/users/create', newUser)
-        console.log(res)
+        if (res.status < 299) {
+            window.location.href = "/login"
+            return
+        }
+        newUserForm = new NewUser()
+        alert(`Login error, please try again: \r\n${res.message}`)    
+        return
     }
 </script>
 <form name="register" id="register" on:submit|preventDefault={handleSubmit}>

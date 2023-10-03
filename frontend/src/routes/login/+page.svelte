@@ -1,10 +1,16 @@
 <script lang="ts">
     import { apiRequest } from '$lib/api'
 
-    const credentials = {
-        username: null, 
-        password: null
+    class Credentials {
+        username: string | null
+        password: string | null
+        constructor(username?: string | null, password?: string | null) {
+            this.username = username ?? null 
+            this.password = password ?? null 
+        }
     }
+
+    let credentials = new Credentials()
 
     const handleSubmit = async() => {
         if (credentials.username === null || credentials.username === "") {
@@ -12,7 +18,13 @@
             return
         }
         const res = await apiRequest('/auth', credentials)
-        console.log(res)
+        if (res.status < 299) {
+            window.location.href = "/dash"
+            return
+        }
+        credentials = new Credentials()
+        alert(`Login error, please try again: \r\n${res.message}`)
+        return
     }
 </script>
 <form name="login" id="login" on:submit|preventDefault={handleSubmit}>
