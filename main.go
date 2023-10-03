@@ -14,17 +14,16 @@ import (
 
 	"github.com/okdv/wrench-turn/controllers"
 	"github.com/okdv/wrench-turn/db"
-	"github.com/okdv/wrench-turn/utils"
 )
 
 func main() {
 	var err error
 	// check for env type, default to dev, load env file based on env type
 	if os.Getenv("GO_ENV") == "production" {
-		err = godotenv.Load(".env")
+		err = godotenv.Load(".env.production")
 		log.Print("Initializing WrenchTurn production environment...")
 	} else {
-		err = godotenv.Load(".env.dev")
+		err = godotenv.Load(".env.development")
 		log.Print("Initializing WrenchTurn development environment...")
 	}
 
@@ -39,10 +38,6 @@ func main() {
 		return
 	}
 
-	// construct new env variables
-	os.Setenv("FRONTEND_URL", utils.UrlBuilder(os.Getenv("FRONTEND_PROTO"), os.Getenv("FRONTEND_DOMAIN"), os.Getenv("FRONTEND_PORT")))
-	os.Setenv("API_URL", utils.UrlBuilder(os.Getenv("API_PROTO"), os.Getenv("API_DOMAIN"), os.Getenv("API_PORT")))
-
 	// initiate controllers
 	authController := controllers.NewAuthController()
 	userController := controllers.NewUserController()
@@ -53,7 +48,7 @@ func main() {
 
 	// set cors for router
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{os.Getenv("FRONTEND_URL")},
+		AllowedOrigins:   []string{os.Getenv("PUBLIC_FRONTEND_URL")},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -70,9 +65,8 @@ func main() {
 	r.Get("/env", func(w http.ResponseWriter, r *http.Request) {
 		// create slice of PUBLIC env vars
 		envVars := map[string]string{
-			"FRONTEND_URL": os.Getenv("FRONTEND_URL"),
-			"API_URL":      os.Getenv("API_URL"),
-			"ENV":          os.Getenv("NODE_ENV"),
+			"PUBLIC_FRONTEND_URL": os.Getenv("PUBLIC_FRONTEND_URL"),
+			"PUBLIC_API_URL":      os.Getenv("PUBLIC_API_URL"),
 		}
 		// convert into json response
 		jsonData, err := json.Marshal(envVars)
@@ -98,6 +92,6 @@ func main() {
 	r.Post("/users/updatePassword", authController.Verify(userController.UpdatePassword))
 
 	// serve router
-	log.Printf("WrenchTurn server listening on port %v", os.Getenv("API_PORT"))
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("API_PORT"), r))
+	log.Printf("WrenchTurn server listening on port %v", os.Getenv("PUBLIC_API_PORT"))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PUBLIC_API_PORT"), r))
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -37,12 +38,16 @@ func CreateJWT(id int64, username string, isAdmin bool, cookieName string) (*htt
 	if err != nil {
 		return nil, err
 	}
+	// get domain from frontend url
+	var domain = strings.TrimPrefix(os.Getenv("PUBLIC_FRONTEND_URL"), "https://")
+	domain = strings.TrimPrefix(domain, "http://")
+	domain = strings.TrimSuffix(domain, ":"+os.Getenv("PUBLIC_FRONTEND_PORT"))
 	// create a JWT cookie
 	cookie := &http.Cookie{
 		Name:     cookieName,
 		Value:    tokenStr,
 		Path:     "/",
-		Domain:   os.Getenv("API_DOMAIN"),
+		Domain:   domain,
 		Expires:  newExpirationTime,
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,

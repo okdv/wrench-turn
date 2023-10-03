@@ -1,6 +1,8 @@
+import { PUBLIC_API_URL } from '$env/static/public'
+
 export const apiRequest = async(endpoint: string, body?: {[key:string]: unknown}, method?: string): Promise<{[key:string]:unknown}> => {
     try {
-        const res = await fetch(`http://localhost:8080${endpoint}`, {
+        const res = await fetch(`${PUBLIC_API_URL ?? 'http://localhost:8080'}${endpoint}`, {
             method: method ?? (body ? 'POST' : 'GET'),
             body: body ? JSON.stringify(body) : undefined,
             headers: {

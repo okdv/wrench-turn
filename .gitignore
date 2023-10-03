@@ -19,4 +19,5 @@ wrench-turn
 go.work
 
 # Private env
-.env
+.env*
+!.env.development
