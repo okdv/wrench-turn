@@ -18,9 +18,11 @@ wrench-turn
 # Go workspace file
 go.work
 
-# Private env
-.env*
-!.env.development
-
-# docker volumes 
-./data
+# SvelteKit 
+.DS_Store
+node_modules
+/frontend/build
+/frontend/.svelte-kit
+/frontend/package
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
