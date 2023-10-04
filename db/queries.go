@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"log"
+	"strconv"
 
 	"github.com/okdv/wrench-turn/models"
 )
@@ -321,32 +322,15 @@ func EditJob(editedJob models.Job) error {
 
 // DeleteJob
 // Take job id as arg, delete Job from job table where id present
-func DeleteJob(jobId int64) error {
-	res, err := DB.Exec("DELETE FROM job WHERE id = ?", jobId)
-	// throw SQL errors
-	if err != nil {
-		log.Printf("DB Query Error: %s", err)
-		return err
+func DeleteJob(jobId int64, userId *int64) error {
+	var wheres []string
+	q := "DELETE FROM job"
+	wheres = append(wheres, "id="+strconv.FormatInt(jobId, 10))
+	if userId != nil {
+		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
 	}
-	// retrieve rows affected count
-	rows, err := res.RowsAffected()
-	if err != nil {
-		log.Printf("DB Query Error: %s", err)
-		return err
-	}
-	// throw error if no rows affected
-	if rows == 0 {
-		log.Printf("No rows deleted")
-		return errors.New("No rows deleted")
-	}
-
-	return nil
-}
-
-// DeleteUsersJob
-// Take job id and user id as arg, delete Job from job table where job id and user id are present
-func DeleteUsersJob(jobId int64, userId int64) error {
-	res, err := DB.Exec("DELETE FROM job WHERE id = ? AND user = ?", jobId, userId)
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
 		log.Printf("DB Query Error: %s", err)

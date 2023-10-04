@@ -56,14 +56,7 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, searchStr *
 
 // DeleteJob
 // Takes job id as arg, passes to DeleteJob query
-func DeleteJob(jobId int64) error {
-	err := db.DeleteJob(jobId)
-	return err
-}
-
-// DeleteUsersJob
-// Takes job id as arg, passes to DeleteJob query
-func DeleteUsersJob(jobId int64, userId int64) error {
-	err := db.DeleteUsersJob(jobId, userId)
+func DeleteJob(jobId int64, userId *int64) error {
+	err := db.DeleteJob(jobId, userId)
 	return err
 }

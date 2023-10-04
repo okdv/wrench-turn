@@ -167,11 +167,11 @@ func (jc *JobController) DeleteJob(w http.ResponseWriter, r *http.Request, c *mo
 		return
 	}
 	// if admin, call DeleteJob service, otherwise call DeleteUsersJob to only allow job deletion for requesting users jobs
-	if c.Is_admin == true {
-		err = services.DeleteJob(jobId)
-	} else {
-		err = services.DeleteUsersJob(jobId, c.ID)
+	var userId *int64 = nil
+	if c.Is_admin != true {
+		userId = &c.ID
 	}
+	err = services.DeleteJob(jobId, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to delete job: %v", err)
