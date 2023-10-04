@@ -122,7 +122,7 @@ func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *str
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -231,4 +231,235 @@ func UpdatePassword(username string, password *[]byte) error {
 		return errors.New("No rows updated")
 	}
 	return nil
+}
+
+// Job Queries
+
+// GetJob
+// Takes job id, queries it in db, returns Job
+func GetJob(jobId int64) (*models.Job, error) {
+	var job models.Job
+	// query db, return any errors
+	err := DB.QueryRow("SELECT * FROM job WHERE id=?", jobId).Scan(
+		&job.ID,
+		&job.Name,
+		&job.Description,
+		&job.Instructions,
+		&job.Is_template,
+		&job.Is_complete,
+		&job.Vehicle,
+		&job.User,
+		&job.Origin_job,
+		&job.Repeats,
+		&job.Odo_interval,
+		&job.Time_interval,
+		&job.Time_interval_unit,
+		&job.Due_date,
+		&job.Completed_at,
+		&job.Created_at,
+		&job.Updated_at,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	return &job, nil
+}
+
+// CreateJob
+// Takes newJob, creates in db, returns id
+func CreateJob(newJob models.NewJob) (*int64, error) {
+	// insert into db, return any errors
+	res, err := DB.Exec("INSERT INTO job(Name, Description, Instructions, Is_template, Vehicle, User, Origin_job, Repeats, Odo_interval, Time_interval, Time_interval_unit, Due_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+		newJob.Name,
+		newJob.Description,
+		newJob.Instructions,
+		newJob.Is_template,
+		newJob.Vehicle,
+		newJob.User,
+		newJob.Origin_job,
+		newJob.Repeats,
+		newJob.Odo_interval,
+		newJob.Time_interval,
+		newJob.Time_interval_unit,
+		newJob.Due_date,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	// get inserted jobs id
+	jobId, err := res.LastInsertId()
+	return &jobId, err
+}
+
+// EditJob
+// Take Job as arg, build update query with QueryBuilder, update it in db via generated query
+func EditJob(editedJob models.Job) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE job SET name=?, description=?, instructions=?, is_template=?, repeats=?, odo_interval=?, time_interval=?, time_interval_unit=?, due_date=?, updated_at=CURRENT_TIMESTAMP"
+	// add required wheres (ensures the job id and user id in the db match that of request body)
+	wheres = append(wheres, "user=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, editedJob.Name, editedJob.Description, editedJob.Instructions, editedJob.Is_template, editedJob.Repeats, editedJob.Odo_interval, editedJob.Time_interval, editedJob.Time_interval_unit, editedJob.Due_date, editedJob.User, editedJob.ID)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
+
+// DeleteJob
+// Take job id as arg, delete Job from job table where id present
+func DeleteJob(jobId int64) error {
+	res, err := DB.Exec("DELETE FROM job WHERE id = ?", jobId)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}
+
+// DeleteUsersJob
+// Take job id and user id as arg, delete Job from job table where job id and user id are present
+func DeleteUsersJob(jobId int64, userId int64) error {
+	res, err := DB.Exec("DELETE FROM job WHERE id = ? AND user = ?", jobId, userId)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}
+
+// ListJobs
+// Take filters as args, return Job list
+func ListJobs(userId *string, vehicleId *string, isTemplate *string, searchStr *string, sort *string) ([]*models.Job, error) {
+	var joins []string
+	var wheres []string
+	var likes []Like
+	// establish default sort if not provided
+	var orderBy = "j.updated_at DESC"
+	// establish basic query
+	q := "SELECT * FROM job AS j"
+	// if userId provided, add where to query
+	if userId != nil && len(*userId) > 0 {
+		wheres = append(wheres, "j.user="+*userId)
+	}
+	// if vehicleId provided, add where to query
+	if vehicleId != nil && len(*vehicleId) > 0 {
+		wheres = append(wheres, "j.vehicle="+*vehicleId)
+	}
+	// if isTemplate provided, add where to query
+	if isTemplate != nil && len(*isTemplate) > 0 {
+		wheres = append(wheres, "j.is_template="+*isTemplate)
+	}
+	// if search string provided, construct likes to query username, description cols
+	if searchStr != nil && len(*searchStr) > 0 {
+		var fields []string
+		fields = append(fields, "j.name")
+		fields = append(fields, "j.description")
+		fields = append(fields, "j.instructions")
+		likes = append(likes, Like{
+			Fields: fields,
+			Match:  *searchStr,
+			Or:     true,
+		})
+	}
+	// if sort provided, append appropriate sort based on query param
+	if sort != nil && len(*sort) > 0 {
+		switch *sort {
+		case "az":
+			orderBy = "j.name ASC"
+		case "za":
+			orderBy = "j.name DESC"
+		case "completed":
+			orderBy = "j.completed_at DESC"
+		case "oldest":
+			orderBy = "j.created_at ASC"
+		case "newest":
+			orderBy = "j.created_at DESC"
+		case "last_updated":
+			orderBy = "j.updated_at DESC"
+		default:
+			orderBy = "j.updated_at DESC"
+		}
+	}
+	// generate query with QueryBuilder
+	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	// retrieve all matching rows
+	rows, err := DB.Query(query)
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+	// create list of Job
+	jobs := make([]*models.Job, 0)
+	// loop through returned rows
+	for rows.Next() {
+		// attribute to Job
+		job := models.Job{}
+		err := rows.Scan(
+			&job.ID,
+			&job.Name,
+			&job.Description,
+			&job.Instructions,
+			&job.Is_template,
+			&job.Is_complete,
+			&job.Vehicle,
+			&job.User,
+			&job.Origin_job,
+			&job.Repeats,
+			&job.Odo_interval,
+			&job.Time_interval,
+			&job.Time_interval_unit,
+			&job.Due_date,
+			&job.Completed_at,
+			&job.Created_at,
+			&job.Updated_at,
+		)
+		if err != nil {
+			log.Printf("Error scanning rows retrieved from DB: %s", err)
+			return nil, err
+		}
+		// append Job to list of Job
+		jobs = append(jobs, &job)
+	}
+	return jobs, nil
 }
