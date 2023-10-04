@@ -16,12 +16,12 @@ type NewUser struct {
 }
 
 type User struct {
-	ID          int64      `json:"id"`
-	Username    string     `json:"username"`
-	Email       *string    `json:"email"`
-	Description *string    `json:"description"`
-	Hashed_pw   *[]byte    `json:"hashedPw"`
-	Is_admin    *int       `json:"isAdmin"`
-	Created_at  *time.Time `json:"createdAt"`
-	Updated_at  *time.Time `json:"updatedAt"`
+	ID          int64     `json:"id"`
+	Username    string    `json:"username"`
+	Email       *string   `json:"email"`
+	Description *string   `json:"description"`
+	Hashed_pw   *[]byte   `json:"hashedPw"`
+	Is_admin    *int      `json:"isAdmin"`
+	Created_at  time.Time `json:"createdAt"`
+	Updated_at  time.Time `json:"updatedAt"`
 }

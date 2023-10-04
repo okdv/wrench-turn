@@ -16,7 +16,7 @@ func CreateUser(newUser models.NewUser) (*models.User, error) {
 	}
 	// insert into db, return userID
 	userId, err := db.CreateUser(newUser, hashed)
-	if err != nil || userId == nil {
+	if err != nil {
 		return nil, err
 	}
 	// retrieve User from db by userID, return User

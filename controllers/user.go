@@ -31,14 +31,14 @@ func (uc *UserController) ListUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := services.ListUsers(&jobId, &vehicleId, &isAdmin, &searchStr, &sort)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Unable to retrieve any users")
+		fmt.Fprintf(w, "Unable to retrieve any users: %v", err)
 		return
 	}
 	// covnert to JSON response
 	jsonData, err := json.Marshal(users)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Unable to convert vehicle to JSON response")
+		fmt.Fprintf(w, "Unable to convert vehicle to JSON response: %v", err)
 		return
 	}
 	// respond with json
@@ -59,7 +59,6 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
-	// confirm username and password are not null
 	// get list of admin users, upgrade newUser to be admin if none exist
 	adminStr := "1"
 	adminUsers, err := services.ListUsers(nil, nil, &adminStr, nil, nil)
@@ -83,7 +82,7 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Unable to convert user to JSON response")
+		fmt.Fprintf(w, "Unable to convert user to JSON response: %v", err)
 		return
 	}
 	// respond with json
@@ -100,7 +99,7 @@ func (uc *UserController) EditUser(w http.ResponseWriter, r *http.Request, c *mo
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "Invalid request body")
+		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
 	// if requesting users id doesnt match id in request body, and they are not an admin, throw error
@@ -120,7 +119,7 @@ func (uc *UserController) EditUser(w http.ResponseWriter, r *http.Request, c *mo
 	jsonData, err := json.Marshal(updatedUser)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Unable to convert user to JSON response")
+		fmt.Fprintf(w, "Unable to convert user to JSON response: %v", err)
 		return
 	}
 	// respond with json
@@ -138,14 +137,14 @@ func (uc *UserController) GetUserByUsername(w http.ResponseWriter, r *http.Reque
 	user, err := services.GetUserByUsername(username)
 	if err != nil || user == nil {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "User not found")
+		fmt.Fprintf(w, "User not found: %v", err)
 		return
 	}
 	// covnert to JSON response
 	jsonData, err := json.Marshal(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Unable to convert user to JSON response")
+		fmt.Fprintf(w, "Unable to convert user to JSON response: %v", err)
 		return
 	}
 	// respond with json
@@ -169,7 +168,7 @@ func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request, c *
 	err := services.DeleteUser(username)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, err.Error())
+		fmt.Fprintf(w, "Unable to delete user: %v", err)
 		return
 	}
 	// respond with text
@@ -185,7 +184,7 @@ func (uc *UserController) UpdatePassword(w http.ResponseWriter, r *http.Request,
 	err := json.NewDecoder(r.Body).Decode(&passwords)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "Invalid request body")
+		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
 	// if request is not admin, run additional validations
