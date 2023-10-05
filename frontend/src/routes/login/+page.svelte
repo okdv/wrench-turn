@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { apiRequest } from '$lib/api'
+    import { apiRequest, setToken } from '$lib/api'
 
     class Credentials {
         username: string | null
@@ -18,13 +18,26 @@
             return
         }
         const res = await apiRequest('/auth', credentials)
-        if (res.status < 299) {
-            window.location.href = "/dash"
-            return
+        if (!res.ok) {
+            credentials = new Credentials()
+            if (res.status === 401) {
+                alert("Username or password incorrect, please try again")
+                return
+            }
+            const msg = await res.text()
+            alert(`Login error, please try again: \r\n${msg}`)  
+            return 
         }
-        credentials = new Credentials()
-        alert(`Login error, please try again: \r\n${res.message}`)
+        const json = await res.json() 
+        const tokenAdded = await setToken(json["Value"])
+        if (!tokenAdded) {
+            credentials = new Credentials()
+            alert("Had trouble saving your login token, please try again")
+            return 
+        }
+        window.location.href = "/dash"
         return
+
     }
 </script>
 <form name="login" id="login" on:submit|preventDefault={handleSubmit}>

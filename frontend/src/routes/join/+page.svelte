@@ -31,13 +31,15 @@
             password: newUserForm.password,
             email: newUserForm.email
         }
+
         const res = await apiRequest('/users/create', newUser)
-        if (res.status < 299) {
-            window.location.href = "/login"
+        if (!res.ok) {
+            const msg = await res.text()
+            newUserForm = new NewUser()
+            alert(`Login error, please try again: \r\n${msg}`)
             return
         }
-        newUserForm = new NewUser()
-        alert(`Login error, please try again: \r\n${res.message}`)    
+        window.location.href = '/login'            
         return
     }
 </script>
