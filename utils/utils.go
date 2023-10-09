@@ -37,15 +37,19 @@ func BoolToInt(b bool) int {
 // ValidateAndHashPassword util takes password as string, returns bcrypt hash and error
 func ValidateAndHashPassword(password *string) (*[]byte, error) {
 	if password != nil {
+		// generate hashed pw
 		hashed, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 		if err != nil {
 			return nil, errors.New("Unable to hash password")
 		}
+		// confirm newly generated hash password comparison to the pw its built from
 		err = bcrypt.CompareHashAndPassword(hashed, []byte(*password))
 		if err != nil {
 			return nil, errors.New("Hash does not match new password")
 		}
+		// return hash, no errors
 		return &hashed, nil
 	}
+	// return nil for all if password nil, prevent rewrites elsewhere for null password support
 	return nil, nil
 }

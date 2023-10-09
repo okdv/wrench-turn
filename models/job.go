@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// used for new job forms
 type NewJob struct {
 	// meta data
 	Name         string  `json:"name"`
@@ -21,6 +22,7 @@ type NewJob struct {
 	Due_date *time.Time `json:"dueDate"`
 }
 
+// used for existing job data
 type Job struct {
 	// meta data
 	ID           int64   `json:"id"`
