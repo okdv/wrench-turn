@@ -19,13 +19,13 @@ type Like struct {
 
 // ConnectDatabase
 // Use sqlite pkg to establish a connection
-func ConnectDatabase() error {
+func ConnectDatabase() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "./sqlite.db")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	DB = db
-	return nil
+	return db, nil
 }
 
 // QueryBuilder

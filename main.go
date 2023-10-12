@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// connect to db
-	err = db.ConnectDatabase()
+	_, err = db.ConnectDatabase()
 	if err != nil {
 		log.Fatal("Unable to connect to SQLite Database")
 		return
