@@ -54,6 +54,8 @@ func TestMain(m *testing.M) {
 	r.Get("/users/{username}", userController.GetUserByUsername)
 	r.Post("/users/create", userController.CreateUser)
 	r.Delete("/users/{username}", authController.Verify(userController.DeleteUser))
+	r.Post("/users/edit", authController.Verify(userController.EditUser))
+
 	// after all tests, close db
 	defer DB.Close()
 	// run tests
@@ -116,31 +118,6 @@ func TestListUsers(t *testing.T) {
 	log.Print("Successfully retrieved users")
 }
 
-// TestGetUser
-// Tests getting all user created by TestCreateUser
-func TestGetUser(t *testing.T) {
-	// get from api
-	req = httptest.NewRequest("GET", "/users/"+createdUser.Username, nil)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	// error if unexpected HTTP status
-	if w.Code != http.StatusOK {
-		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
-	}
-	// error if unable to decode response
-	var fetchedUser *models.User
-	if err := json.NewDecoder(w.Body).Decode(&fetchedUser); err != nil {
-		t.Errorf("Error decoding response body: %v", err)
-	}
-
-	// error if returned user ID is not the same as created user ID
-	if fetchedUser.ID != createdUser.ID {
-		t.Errorf("Username %v fetched a different user ID, %d, than expected, %d", createdUser.Username, fetchedUser.ID, createdUser.ID)
-	}
-	log.Print("Successfully retrieved test user")
-}
-
 // TestAuth
 // Tests auth with user created by TestCreateUser
 func TestAuth(t *testing.T) {
@@ -165,6 +142,57 @@ func TestAuth(t *testing.T) {
 		t.Errorf("JWT not present")
 	}
 	log.Print("Successfully logged in")
+}
+
+// TestGetAndEditUser
+// Tests getting all user created by TestCreateUser
+func TestGetAndEditUser(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/users/"+createdUser.Username, nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var fetchedUser *models.User
+	if err := json.NewDecoder(w.Body).Decode(&fetchedUser); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+
+	// error if returned user ID is not the same as created user ID
+	if fetchedUser.ID != createdUser.ID {
+		t.Errorf("Username %v fetched a different user ID, %d, than expected, %d", createdUser.Username, fetchedUser.ID, createdUser.ID)
+	}
+	log.Print("Successfully retrieved test user")
+	// change user description
+	testDescription := "Test Description"
+	fetchedUser.Description = &testDescription
+	// convert to json for editing
+	jsonData, err := json.Marshal(fetchedUser)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// edit via post req
+	req = httptest.NewRequest("POST", "/users/edit", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// decode body from json or error
+	if err := json.NewDecoder(w.Body).Decode(&fetchedUser); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// compare dscriptions to confirm successful edit
+	if fetchedUser.Description != &testDescription {
+		t.Error("Description was not updated")
+	}
+	log.Print("Successfully edited user")
 }
 
 // TestDeleteUser
