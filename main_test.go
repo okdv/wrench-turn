@@ -142,7 +142,7 @@ func TestAuth(t *testing.T) {
 }
 
 // TestGetAndEditUser
-// Tests getting all user created by TestCreateUser
+// Tests getting and editing user created by TestCreateJob
 func TestGetAndEditUser(t *testing.T) {
 	// get from api
 	req = httptest.NewRequest("GET", "/users/"+createdUser.Username, nil)
@@ -315,7 +315,7 @@ func TestDeleteJob(t *testing.T) {
 // Tests deleting the user created by TestCreateUser
 func TestDeleteUser(t *testing.T) {
 	// delete from api
-	req = httptest.NewRequest("DELETE", "/users/", nil)
+	req = httptest.NewRequest("DELETE", "/users/"+createdUser.Username, nil)
 	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
