@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -17,22 +18,12 @@ import (
 
 var r *chi.Mux
 var createdUser *models.User
+var createdJob *models.Job
 var req *http.Request
 var w *httptest.ResponseRecorder
 var testUsername string
 var testPassword string
 var jwtCookie *http.Cookie
-
-/* Order of events
-==============================================================================
-1 TestMain starts, defers to after rest of tests to close and exit
-2 TestCreateUser creates a new user
-3 TestListUsers lists all users, should be at least one (from TestCreateUser)
-4 TestGetUser retrieves user from TestCreateUser
-5 TestAuth authorized with credentials of user from TestCreateUser
-6 TestDeleteUser deletes user from TestCreateUser with JWT from TestAuth
-7 TestMain finishes
-*/
 
 func TestMain(m *testing.M) {
 	// test db connection
@@ -46,6 +37,7 @@ func TestMain(m *testing.M) {
 	// create controllers
 	userController := controllers.NewUserController()
 	authController := controllers.NewAuthController()
+	jobController := controllers.NewJobController()
 	// create routes
 	// auth routes
 	r.Post("/auth", authController.Auth)
@@ -55,7 +47,12 @@ func TestMain(m *testing.M) {
 	r.Post("/users/create", userController.CreateUser)
 	r.Delete("/users/{username}", authController.Verify(userController.DeleteUser))
 	r.Post("/users/edit", authController.Verify(userController.EditUser))
-
+	// job routes
+	r.Get("/jobs", jobController.ListJobs)
+	r.Get("/jobs/{id:[0-9]+}", jobController.GetJob)
+	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
+	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
+	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
 	// after all tests, close db
 	defer DB.Close()
 	// run tests
@@ -195,11 +192,130 @@ func TestGetAndEditUser(t *testing.T) {
 	log.Print("Successfully edited user")
 }
 
+// TestCreateJob
+// Tests createing a job with user created by TestCreateUser
+func TestCreateJob(t *testing.T) {
+	// setuop new test job
+	newJob := &models.NewJob{
+		Name: "wrench-turn go test job",
+	}
+	// convert to json
+	jsonData, err := json.Marshal(newJob)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// create via api
+	req = httptest.NewRequest("POST", "/jobs/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	if err := json.NewDecoder(w.Body).Decode(&createdJob); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	log.Print("Successfully created job")
+}
+
+// TestListJobs
+// Tests getting all jobs
+func TestListJobs(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/jobs", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var jobs *[]models.Job
+	if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if no returned users
+	if jobs == nil || len(*jobs) == 0 {
+		t.Errorf("No jobs retreived, at least one (test jobs from TestCreateJob) should exist")
+	}
+	log.Print("Successfully retrieved jobs")
+}
+
+// TestGetAndEditJob
+// Tests getting and editing job created by TestCreateJob
+func TestGetAndEditJob(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10), nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var fetchedJob *models.Job
+	if err := json.NewDecoder(w.Body).Decode(&fetchedJob); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+
+	// error if returned job ID is not the same as created job ID
+	if fetchedJob.ID != createdJob.ID {
+		t.Errorf("Job ID %d fetched a different job, ID %d, than expected", createdJob.ID, fetchedJob.ID)
+	}
+	log.Print("Successfully retrieved test job")
+	// change job description
+	testDescription := "Test Description"
+	fetchedJob.Description = &testDescription
+	// convert to json
+	jsonData, err := json.Marshal(fetchedJob)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// edit via post req
+	req = httptest.NewRequest("POST", "/jobs/edit", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// decode body from json or error
+	if err := json.NewDecoder(w.Body).Decode(&fetchedJob); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// compare dscriptions to confirm successful edit
+	if fetchedJob.Description != &testDescription {
+		t.Error("Description was not updated")
+	}
+	log.Print("Successfully edited job")
+}
+
+// TestDeleteJob
+// Tests deleting the job created by TestCreateUser
+func TestDeleteJob(t *testing.T) {
+	// delete via api
+	req = httptest.NewRequest("DELETE", "/jobs/"+strconv.FormatInt(createdJob.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected http status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+		// if issue deleting job, log that id as it may need to be manually deleted from db
+		log.Printf("Test job ID %d may still exist, delete manually if so", createdJob.ID)
+	}
+	log.Print("Successfully deleted job")
+}
+
 // TestDeleteUser
 // Tests deleting the user created by TestCreateUser
 func TestDeleteUser(t *testing.T) {
 	// delete from api
-	req = httptest.NewRequest("DELETE", "/users/"+createdUser.Username, nil)
+	req = httptest.NewRequest("DELETE", "/users/", nil)
 	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
