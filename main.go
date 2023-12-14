@@ -84,6 +84,7 @@ func main() {
 	// auth routes
 	r.Post("/auth", authController.Auth)
 	r.Get("/logout", authController.Logout)
+	r.Get("/verify", authController.Verify(authController.TestVerify))
 	// user routes
 	r.Get("/users", userController.ListUsers)
 	r.Get("/users/{username}", userController.GetUserByUsername)

@@ -79,6 +79,14 @@ func (ac *AuthController) Verify(endpointHandler func(w http.ResponseWriter, r *
 	})
 }
 
+// TestVerify
+// Returns a simple success if JWT was verified by verify controller
+func (ac *AuthController) TestVerify(w http.ResponseWriter, r *http.Request, c *models.Claims) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, "JWT successfully verified")
+	return
+}
+
 // Logout
 // Sets JWT and Session cookies to expire immediately
 func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
