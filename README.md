@@ -23,3 +23,10 @@ If you simply want to use Node to render the frontend for development, run
 Build frontend (creates static app with svelte-static-adapter)
 `npm run build`
 Run the generated build dir (/wrench-turn/frontend/build) with the desired web server, such as NGINX
+
+## Contributing
+Pull requests should be made on the `develop` branch 
+git pre-commit hook will attempt to run `go build`, `go test` successfully before committing 
+Please follow this git commit message format
+`<type: chore, feat, fix>: <description> <rel issue number>`
+e.g. `chore: cleaning up comments`, `feat: adding calendar feature #13`, `fix: home button deletes all data #16`
