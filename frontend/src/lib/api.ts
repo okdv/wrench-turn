@@ -19,6 +19,7 @@ export const setToken = async(jwt?: string): Promise<boolean> => {
     }
     return false
 }
+
 // apiRequest
 // fetch proxy purpose built for api requests
 export const apiRequest = async(endpoint: string, body?: unknown, method?: string, redirectOnFail?: boolean): Promise<Response> => {
@@ -45,6 +46,15 @@ export const apiRequest = async(endpoint: string, body?: unknown, method?: strin
         window.location.href = '/login'
     }
     return res
+}
+// verifyToken 
+// return boolean that checks if JWT is valid via api
+export const verifyToken =async (): Promise<boolean> => {
+    const res = await apiRequest("/verify", null, "GET", false)
+    if (res.status === 200) {
+        return true
+    }
+    return false 
 }
 // getJobs
 // apiRequest proxy purpose built for get jobs endpoint

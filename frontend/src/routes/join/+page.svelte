@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { apiRequest } from "$lib/api";
 
+
     class NewUser {
         username: string | null
         password: string | null

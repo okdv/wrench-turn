@@ -1,5 +1,13 @@
 <script lang="ts">
-    import { apiRequest, setToken } from '$lib/api'
+    import { apiRequest, verifyToken, setToken } from '$lib/api'
+
+    const checkLogin = async() => {
+        const isLoggedIn = await verifyToken() 
+        if (isLoggedIn === true) {
+            console.log("already logged in, redirecting to homepage")
+            window.location.href = "/dash"
+        }
+    }
 
     class Credentials {
         username: string | null
@@ -39,6 +47,8 @@
         return
 
     }
+
+    checkLogin()
 </script>
 <form name="login" id="login" on:submit|preventDefault={handleSubmit}>
     <h1 class="text-xl">Login</h1>
