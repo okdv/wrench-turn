@@ -41,6 +41,8 @@ func TestMain(m *testing.M) {
 	// create routes
 	// auth routes
 	r.Post("/auth", authController.Auth)
+	r.Get("/verify", authController.Verify(authController.TestVerify))
+	r.Get("/refresh", authController.Verify(authController.Refresh))
 	// user routes
 	r.Get("/users", userController.ListUsers)
 	r.Get("/users/{username}", userController.GetUserByUsername)
@@ -139,6 +141,55 @@ func TestAuth(t *testing.T) {
 		t.Errorf("JWT not present")
 	}
 	log.Print("Successfully logged in")
+}
+
+// TestVerify
+// Tests verify endpoint
+func TestVerify(t *testing.T) {
+	// test via api
+	req = httptest.NewRequest("GET", "/verify", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	log.Print("Successfully verified with endpoint")
+}
+
+// TestVerify
+// Tests verify endpoint
+func TestRefresh(t *testing.T) {
+	// refresh via api (should not work since jwt doesnt expire within 24 hours)
+	req = httptest.NewRequest("GET", "/refresh", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusNoContent {
+		t.Errorf("Expted status code %d, got %d", http.StatusNoContent, w.Code)
+	}
+	log.Print("Successfully called refresh")
+
+	// force refresh via api
+	req = httptest.NewRequest("GET", "/refresh?force=true", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusNoContent, w.Code)
+	}
+	// error if unable to decode response
+	if err := json.NewDecoder(w.Body).Decode(&jwtCookie); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if jwt is still empty
+	if jwtCookie == nil {
+		t.Errorf("JWT not present")
+	}
+	log.Print("Successfully forced refresh")
 }
 
 // TestGetAndEditUser
