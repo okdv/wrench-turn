@@ -87,6 +87,28 @@ func (ac *AuthController) TestVerify(w http.ResponseWriter, r *http.Request, c *
 	return
 }
 
+// Refresh
+// Refresh JWT if it expires within 24 hours, or force with ?force=true param
+func (ac *AuthController) Refresh(w http.ResponseWriter, r *http.Request, c *models.Claims) {
+	forceStr := r.URL.Query().Get("force")
+	if c.ExpiresAt.Before(time.Now().Add(24*time.Hour)) == false && forceStr != "true" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	jwtCookie, err := services.CreateJWT(c.ID, c.Username, c.Is_admin, jwtCookieName)
+	if err != nil || jwtCookie == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Unable to generate JWT: %v", err)
+		return
+	}
+	// set jwt as cookie
+	http.SetCookie(w, jwtCookie)
+	// return 200ok and jwt as cookie
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jwtCookie)
+}
+
 // Logout
 // Sets JWT and Session cookies to expire immediately
 func (ac *AuthController) Logout(w http.ResponseWriter, r *http.Request) {
