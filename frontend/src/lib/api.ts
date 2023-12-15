@@ -10,8 +10,12 @@ export const getToken = async(): Promise<string | null> => {
 export const setToken = async(jwt?: string): Promise<boolean> => {
     if (!jwt) {
         localStorage.removeItem('wrenchturn-jwt')
+        localStorage.removeItem('wrenchturn-jwt-expiration')
     } else {
         localStorage.setItem('wrenchturn-jwt', jwt)
+        // extract payload portion of jwt, decode base64, parse into json, save expiration to localstorage
+        const jwtPayload = JSON.parse(btoa(jwt.split('.')[1]))
+        localStorage.setItem('wrenchturn-jwt-expiration', jwtPayload.exp)
     }
     const token = await getToken() 
     if (token === jwt) {
@@ -23,6 +27,8 @@ export const setToken = async(jwt?: string): Promise<boolean> => {
 // apiRequest
 // fetch proxy purpose built for api requests
 export const apiRequest = async(endpoint: string, body?: unknown, method?: string, redirectOnFail?: boolean): Promise<Response> => {
+    // initialize mark for refresh, default to false - dont this way so refresh can take place after api call
+    let refresh = false
     // get jwt from localstorage
     const jwt = await getToken()
     // initialize headers for fetch
@@ -31,9 +37,16 @@ export const apiRequest = async(endpoint: string, body?: unknown, method?: strin
     if (body) {
         headers['Content-Type'] = 'application/json'
     }
-    // if jwt isnt null, add auth header with it as bearer
+    // if jwt isnt null, add auth header with it as bearer, check if it expires within 24 hours, mark for refresh
     if (jwt) {
         headers['Authorization'] = `Bearer ${jwt}`
+        // get expire time from localstorage and current unix timestamp
+        const expireUnixTimestamp = Number(localStorage.getItem('wrenchturn-jwt-expiration'))
+        const currentUnixTimestamp = Date.now() 
+        // mark for refresh if less than 24 hours from each other
+        if ((expireUnixTimestamp - currentUnixTimestamp) < 86400) {
+            refresh = true
+        }
     }
     // create fetch
     const res = await fetch(`${PUBLIC_API_URL ?? 'http://localhost:8080'}${endpoint}`, {
@@ -44,6 +57,16 @@ export const apiRequest = async(endpoint: string, body?: unknown, method?: strin
     if (res.status === 401 && redirectOnFail && redirectOnFail === true) {
         await setToken()
         window.location.href = '/login'
+    }
+    // if marked for refresh 
+    if (refresh) {
+        // call refresh api endpoint
+        const res = await apiRequest("/refresh")
+        // if 200 response, save new jwt via setToken
+        if (res.status === 200) {
+            const json = await res.json()
+            await setToken(json.Value)
+        }
     }
     return res
 }
