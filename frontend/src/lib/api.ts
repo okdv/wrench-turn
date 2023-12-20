@@ -14,7 +14,7 @@ export const setToken = async(jwt?: string): Promise<boolean> => {
     } else {
         localStorage.setItem('wrenchturn-jwt', jwt)
         // extract payload portion of jwt, decode base64, parse into json, save expiration to localstorage
-        const jwtPayload = JSON.parse(btoa(jwt.split('.')[1]))
+        const jwtPayload = JSON.parse(atob(jwt.split('.')[1]))
         localStorage.setItem('wrenchturn-jwt-expiration', jwtPayload.exp)
     }
     const token = await getToken() 
