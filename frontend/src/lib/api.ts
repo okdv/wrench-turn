@@ -84,9 +84,9 @@ export const verifyToken =async (): Promise<boolean> => {
     }
     return false 
 }
-// getJobs
-// apiRequest proxy purpose built for get jobs endpoint
-export const getJobs = async(params?: {[key:string]:string}): Promise<Response> => {
+// paramStrConstruct
+// generate param string from array, e.g. ["foo":"bar","bar":"foo"] => ?foo=bar&bar=foo
+export const paramStrConstruct = async(params?: {[key:string]:string}): Promise<string> => {
     let paramStr: string = ''
     if (params) {
         Object.keys(params).forEach((key, i) => {
@@ -99,5 +99,11 @@ export const getJobs = async(params?: {[key:string]:string}): Promise<Response> 
             paramStr += `${key}=${params[key]}`
         })
     }
+    return paramStr
+}
+// getJobs
+// apiRequest proxy purpose built for get jobs endpoint
+export const getJobs = async(params?: {[key:string]:string}): Promise<Response> => {
+    const paramStr = await paramStrConstruct(params)
     return apiRequest(`/jobs${paramStr}`, undefined, 'GET')
 }
