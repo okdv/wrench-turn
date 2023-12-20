@@ -107,3 +107,9 @@ export const getJobs = async(params?: {[key:string]:string}): Promise<Response> 
     const paramStr = await paramStrConstruct(params)
     return apiRequest(`/jobs${paramStr}`, undefined, 'GET')
 }
+// getUsers
+// apiRequest proxy purpose built for get users endpoint
+export const getUsers = async(params?: {[key:string]:string}): Promise<Response> => {
+    const paramStr = await paramStrConstruct(params)
+    return apiRequest(`/users${paramStr}`, undefined, 'GET')
+}

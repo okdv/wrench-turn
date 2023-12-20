@@ -44,3 +44,14 @@ export type Job = 	{
     createdAt: string,
     updatedAt: string,
 }
+
+export type User = {
+    id: number,
+    username: string,
+    email: string|null,
+    description: string|null,
+    hashedPw: string|null,
+    isAdmin: number,
+    createdAt: string,
+    updatedAt: string
+}
