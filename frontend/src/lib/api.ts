@@ -26,7 +26,7 @@ export const setToken = async(jwt?: string): Promise<boolean> => {
 
 // apiRequest
 // fetch proxy purpose built for api requests
-export const apiRequest = async(endpoint: string, body?: unknown, method?: string, redirectOnFail?: boolean): Promise<Response> => {
+export const apiRequest = async(endpoint: string, body?: unknown, method?: string, redirectOnFail?: boolean, preventRefresh?: boolean): Promise<Response> => {
     // initialize mark for refresh, default to false - dont this way so refresh can take place after api call
     let refresh = false
     // get jwt from localstorage
@@ -40,12 +40,16 @@ export const apiRequest = async(endpoint: string, body?: unknown, method?: strin
     // if jwt isnt null, add auth header with it as bearer, check if it expires within 24 hours, mark for refresh
     if (jwt) {
         headers['Authorization'] = `Bearer ${jwt}`
-        // get expire time from localstorage and current unix timestamp
-        const expireUnixTimestamp = Number(localStorage.getItem('wrenchturn-jwt-expiration'))
-        const currentUnixTimestamp = Date.now() 
-        // mark for refresh if less than 24 hours from each other
-        if ((expireUnixTimestamp - currentUnixTimestamp) < 86400) {
-            refresh = true
+        // if refreshing isnt prevented
+        if (preventRefresh !== true) {
+            // get expire time from localstorage and current unix timestamp
+            const expireUnixTimestamp = Number(localStorage.getItem('wrenchturn-jwt-expiration'))
+            const currentUnixTimestamp = Date.now() 
+            const timeLeft = expireUnixTimestamp - currentUnixTimestamp
+            // mark for refresh if less than 24 hours from each other
+            if (timeLeft < 86400 && timeLeft > 0) {            
+                refresh = true
+            }
         }
     }
     // create fetch
@@ -59,9 +63,10 @@ export const apiRequest = async(endpoint: string, body?: unknown, method?: strin
         window.location.href = '/login'
     }
     // if marked for refresh 
-    if (refresh) {
+    if (refresh === true) {
         // call refresh api endpoint
-        const res = await apiRequest("/refresh")
+        // preventrefresh must be true to prevent endless refresh loop
+        const res = await apiRequest("/refresh", null, "GET", false, true)
         // if 200 response, save new jwt via setToken
         if (res.status === 200) {
             const json = await res.json()
@@ -73,7 +78,7 @@ export const apiRequest = async(endpoint: string, body?: unknown, method?: strin
 // verifyToken 
 // return boolean that checks if JWT is valid via api
 export const verifyToken =async (): Promise<boolean> => {
-    const res = await apiRequest("/verify", null, "GET", false)
+    const res = await apiRequest("/verify", null, "GET", false, false)
     if (res.status === 200) {
         return true
     }
