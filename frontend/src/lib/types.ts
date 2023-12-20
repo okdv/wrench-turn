@@ -55,3 +55,10 @@ export type User = {
     createdAt: string,
     updatedAt: string
 }
+
+export type JWTPayload = {
+    id: string,
+    username: string,
+    isAdmin: string,
+    exp: number
+}

@@ -1,5 +1,9 @@
 import { PUBLIC_API_URL } from '$env/static/public'
+import type { JWTPayload } from './types'
 
+// getJWTData
+// return json object of JWT payload
+export const getJWTData = async(jwt: string): Promise<JWTPayload> => JSON.parse(atob(jwt.split('.')[1]))
 // getToken
 // get jwt from localstorage
 export const getToken = async(): Promise<string | null> => {
@@ -14,8 +18,8 @@ export const setToken = async(jwt?: string): Promise<boolean> => {
     } else {
         localStorage.setItem('wrenchturn-jwt', jwt)
         // extract payload portion of jwt, decode base64, parse into json, save expiration to localstorage
-        const jwtPayload = JSON.parse(atob(jwt.split('.')[1]))
-        localStorage.setItem('wrenchturn-jwt-expiration', jwtPayload.exp)
+        const jwtPayload = await getJWTData(jwt)
+        localStorage.setItem('wrenchturn-jwt-expiration', jwtPayload.exp.toString())
     }
     const token = await getToken() 
     if (token === jwt) {
