@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine AS build 
+FROM golang:1.21.5-alpine3.18 AS build 
 
 ARG GO_ENV=production
 ENV GO_ENV=production
