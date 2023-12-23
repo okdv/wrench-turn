@@ -33,6 +33,18 @@
         jobForm = job
     }
 
+    const handleDelete = async() => {
+        const res = await apiRequest(`/jobs/${job?.id}`, null, 'DELETE', true)
+        if (!res.ok) {
+            const msg = await res.text() 
+            alert(`Login error, please try again: \r\n${msg}`)
+            return
+        }
+        alert("Job successfully delete, taking you to the dashboard")
+        window.location.href="/dash"
+        return
+    }
+
     const init = async() => {
         const res = await apiRequest(`/jobs/${$page.params.id}`)
         if (!res.ok) {
@@ -50,6 +62,8 @@
 </script>
 <div>
     {#if edit}
+        <button on:click={handleDelete}>Delete</button>
+        <br />
         <input name="edit-job-name" id="edit-job-name" bind:value={jobForm.name} />
     {:else}
         <h1>{!job ? "..." : job.name}</h1>
