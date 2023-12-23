@@ -94,7 +94,6 @@ export const paramStrConstruct = async(params?: {[key:string]:string}): Promise<
     let paramStr: string = ''
     if (params) {
         Object.keys(params).forEach((key, i) => {
-            paramStr += `${key}=${params[key]}`
             if (i === 0) {
                 paramStr += `?`
             } else {
