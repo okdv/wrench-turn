@@ -12,7 +12,7 @@ const config = {
 
 	kit: {
 		prerender: {
-      entries: ['/join', '/login', '/', '/jobs/create', '/jobs', '/jobs/[id]']
+      entries: ['/', '/dash', '/join', '/login', '/jobs/create', '/jobs', '/jobs/[id]', '/logout', '/settings', '/users', '/users/[username']
     },
 		adapter: adapter({
       pages: 'build', 
