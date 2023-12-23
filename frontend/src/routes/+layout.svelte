@@ -1,9 +1,29 @@
-<script>
+<script lang="ts">
+	import { verifyToken } from "$lib/api";
     import "../app.css";
+
+    let isLoggedIn = false
+
+    const init = async() => {
+      isLoggedIn = await verifyToken()
+    }
+    init()
   </script>
   
-  <div>
-    <h1 class="text-xl">WrenchTurn</h1>
+  <div class="flex justify-between p-2">
+    <a href="{isLoggedIn ? "/dash" : "/"}">
+      <h1 class="text-xl">WrenchTurn</h1>
+    </a>
+    <div class="flex justify-around">
+      <a href="/users" class="p-2">Users</a>
+      <a href="/jobs" class="p-2">Jobs</a>
+      {#if isLoggedIn}
+        <a href="/settings" class="p-2">Settings</a>
+      {:else}
+        <a href="/login" class="p-2">Login</a>
+        <a href="/join" class="p-2">Join</a>
+      {/if}
+    </div>
   </div>
   <slot />
   <div class="text-center">
