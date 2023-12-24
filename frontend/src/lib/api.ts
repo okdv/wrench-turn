@@ -1,5 +1,5 @@
 import { PUBLIC_API_URL } from '$env/static/public'
-import type { JWTPayload } from './types'
+import type { JWTPayload } from '$lib/types'
 
 // getJWTData
 // return json object of JWT payload
@@ -115,4 +115,16 @@ export const getJobs = async(params?: {[key:string]:string}): Promise<Response> 
 export const getUsers = async(params?: {[key:string]:string}): Promise<Response> => {
     const paramStr = await paramStrConstruct(params)
     return apiRequest(`/users${paramStr}`, undefined, 'GET')
+}
+// getUser 
+// apiRequest proxy purpose built for get user endpoint
+export const getUser = async(username?: string): Promise<Response> => {
+    if (!username) {
+        const jwt = await getToken()
+        if (jwt) {
+            const jwtData = await getJWTData(jwt)
+            username = jwtData.username
+        }
+    }
+    return apiRequest(`/users/${username}`, undefined, 'GET', true, false)
 }

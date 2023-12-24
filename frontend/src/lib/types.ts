@@ -45,15 +45,25 @@ export type Job = 	{
     updatedAt: string,
 }
 
-export type User = {
-    id: number,
-    username: string,
-    email: string|null,
-    description: string|null,
-    hashedPw: string|null,
-    isAdmin: number,
-    createdAt: string,
-    updatedAt: string
+export class User {
+    id: number
+    username: string
+    email: string|null
+    description: string|null
+    hashedPw: string|null
+    isAdmin: number
+    createdAt: string
+    updatedAt: string 
+    constructor() {
+        this.id = 0
+        this.username = ''
+        this.email = '' 
+        this.description = '' 
+        this.hashedPw = null 
+        this.isAdmin = 0 
+        this.createdAt = ''
+        this.updatedAt = ''
+    }
 }
 
 export type JWTPayload = {
@@ -61,4 +71,15 @@ export type JWTPayload = {
     username: string,
     isAdmin: string,
     exp: number
+}
+
+export class UpdatePassword {
+    password: string 
+    newPassword: string
+    confirmPassword: string 
+    constructor() {
+        this.password = ''
+        this.newPassword = ''
+        this.confirmPassword = ''
+    }
 }
