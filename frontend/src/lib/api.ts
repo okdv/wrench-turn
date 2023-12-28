@@ -104,6 +104,12 @@ export const paramStrConstruct = async(params?: {[key:string]:string}): Promise<
     }
     return paramStr
 }
+// getVehicles
+// apiRequest proxy purpose built for get vehicles endpoint
+export const getVehicles = async(params?: {[key:string]:string}): Promise<Response> => {
+    const paramStr = await paramStrConstruct(params)
+    return apiRequest(`/vehicles${paramStr}`, undefined, 'GET')
+}
 // getJobs
 // apiRequest proxy purpose built for get jobs endpoint
 export const getJobs = async(params?: {[key:string]:string}): Promise<Response> => {

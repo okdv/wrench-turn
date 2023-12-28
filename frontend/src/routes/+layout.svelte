@@ -17,6 +17,7 @@
     <div class="flex justify-around">
       <a href="/users" class="p-2">Users</a>
       <a href="/jobs" class="p-2">Jobs</a>
+      <a href="/vehicles" class="p-2">Vehicles</a>
       {#if isLoggedIn}
         <a href="/settings" class="p-2">Settings</a>
       {:else}

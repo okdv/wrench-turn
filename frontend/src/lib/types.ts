@@ -45,6 +45,51 @@ export type Job = 	{
     updatedAt: string,
 }
 
+export class NewVehicle {
+    name: string
+    description: string|null
+    type: string|null
+    isMetric: number
+    vin: string|null
+    year: number|null
+    make: string|null
+    model: string|null
+    trim: string|null
+    odometer: number|null
+    user: number|null
+    constructor() {
+        this.name = ""
+        this.description = null 
+        this.type = null 
+        this.isMetric = 0 
+        this.vin = null 
+        this.year = null 
+        this.make = null
+        this.model = null 
+        this.trim = null 
+        this.odometer = null
+        this.user = null
+    }
+}
+
+export type Vehicle = 	{
+    id: number,
+    name: string,
+    description: string|null,
+    type: string|null,
+    isMetric: number,
+    vin: string|null,
+    year: number|null,
+    make: string|null,
+    model: string|null,
+    trim: string|null,
+    odometer: number|null,
+    user: number|null,
+    createdAt: string,
+    updatedAt: string,
+}
+
+
 export class User {
     id: number
     username: string
