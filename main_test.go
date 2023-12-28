@@ -19,6 +19,7 @@ import (
 var r *chi.Mux
 var createdUser *models.User
 var createdJob *models.Job
+var createdVehicle *models.Vehicle
 var req *http.Request
 var w *httptest.ResponseRecorder
 var testUsername string
@@ -38,6 +39,7 @@ func TestMain(m *testing.M) {
 	userController := controllers.NewUserController()
 	authController := controllers.NewAuthController()
 	jobController := controllers.NewJobController()
+	vehicleController := controllers.NewVehicleController()
 	// create routes
 	// auth routes
 	r.Post("/auth", authController.Auth)
@@ -55,6 +57,12 @@ func TestMain(m *testing.M) {
 	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
 	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
 	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
+	// vehicle routes
+	r.Get("/vehicles", vehicleController.ListVehicles)
+	r.Get("/vehicles/{id:[0-9]+}", vehicleController.GetVehicle)
+	r.Post("/vehicles/create", authController.Verify(vehicleController.CreateVehicle))
+	r.Post("/vehicles/edit", authController.Verify(vehicleController.EditVehicle))
+	r.Delete("/vehicles/{id:[0-9]+}", authController.Verify(vehicleController.DeleteVehicle))
 	// after all tests, close db
 	defer DB.Close()
 	// run tests
@@ -243,12 +251,116 @@ func TestGetAndEditUser(t *testing.T) {
 	log.Print("Successfully edited user")
 }
 
+// TestCreateVehicle
+// Tests createing a vehicle with user created by TestCreateUser
+func TestCreateVehicle(t *testing.T) {
+	// setup new test vehicle
+	newVehicle := &models.NewVehicle{
+		Name: "wrench-turn go test vehicle",
+	}
+	// convert to json
+	jsonData, err := json.Marshal(newVehicle)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// create via api
+	req = httptest.NewRequest("POST", "/vehicles/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	req.Header.Add("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	if err := json.NewDecoder(w.Body).Decode(&createdVehicle); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	log.Print("Successfully created vehicle")
+}
+
+// TestListVehicles
+// Tests getting all vehicles
+func TestListVehicles(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/vehicles", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var vehicles *[]models.Vehicle
+	if err := json.NewDecoder(w.Body).Decode(&vehicles); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if no returned users
+	if vehicles == nil || len(*vehicles) == 0 {
+		t.Errorf("No vehicles retreived, at least one (test vehicles from TestCreateVehicle) should exist")
+	}
+	log.Print("Successfully retrieved vehicles")
+}
+
+// TestGetAndEditVehicle
+// Tests getting and editing job created by TestCreateVehicle
+func TestGetAndEditVehicle(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/vehicles/"+strconv.FormatInt(createdVehicle.ID, 10), nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var fetchedVehicle *models.Vehicle
+	if err := json.NewDecoder(w.Body).Decode(&fetchedVehicle); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+
+	// error if returned vehicle ID is not the same as created vehicle ID
+	if fetchedVehicle.ID != createdVehicle.ID {
+		t.Errorf("Vehicle ID %d fetched a different vehicle, ID %d, than expected", createdVehicle.ID, fetchedVehicle.ID)
+	}
+	log.Print("Successfully retrieved test vehicle")
+	// change vehicle description
+	testDescription := "Test Description"
+	fetchedVehicle.Description = &testDescription
+	// convert to json
+	jsonData, err := json.Marshal(fetchedVehicle)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// edit via post req
+	req = httptest.NewRequest("POST", "/vehicles/edit", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// decode body from json or error
+	if err := json.NewDecoder(w.Body).Decode(&fetchedVehicle); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// compare dscriptions to confirm successful edit
+	if fetchedVehicle.Description != &testDescription {
+		t.Error("Description was not updated")
+	}
+	log.Print("Successfully edited vehicle")
+}
+
 // TestCreateJob
 // Tests createing a job with user created by TestCreateUser
 func TestCreateJob(t *testing.T) {
 	// setuop new test job
 	newJob := &models.NewJob{
-		Name: "wrench-turn go test job",
+		Name:    "wrench-turn go test job",
+		Vehicle: &createdVehicle.ID,
 	}
 	// convert to json
 	jsonData, err := json.Marshal(newJob)
@@ -360,6 +472,23 @@ func TestDeleteJob(t *testing.T) {
 		log.Printf("Test job ID %d may still exist, delete manually if so", createdJob.ID)
 	}
 	log.Print("Successfully deleted job")
+}
+
+// TestDeleteVehicle
+// Tests deleting the vehicle created by TestCreateUser
+func TestDeleteVehicle(t *testing.T) {
+	// delete via api
+	req = httptest.NewRequest("DELETE", "/vehicles/"+strconv.FormatInt(createdVehicle.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected http status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+		// if issue deleting vehicle, log that id as it may need to be manually deleted from db
+		log.Printf("Test vehicle ID %d may still exist, delete manually if so", createdVehicle.ID)
+	}
+	log.Print("Successfully deleted vehicle")
 }
 
 // TestDeleteUser

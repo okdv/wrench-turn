@@ -4,7 +4,7 @@ import "time"
 
 type NewVehicle struct {
 	// meta data
-	Name        *string `json:"name"`
+	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	Type        *string `json:"type"`
 	Is_metric   *int    `json:"isMetric"`
@@ -23,7 +23,7 @@ type NewVehicle struct {
 type Vehicle struct {
 	// meta data
 	ID          int64   `json:"id"`
-	Name        *string `json:"name"`
+	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	Type        *string `json:"type"`
 	Is_metric   *int    `json:"isMetric"`
