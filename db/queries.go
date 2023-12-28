@@ -447,3 +447,209 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, searchStr *
 	}
 	return jobs, nil
 }
+
+// Vehicle Queries
+
+// GetVehicle
+// Takes vehicle id, queries it in db, returns vehicle
+func GetVehicle(vehicleId int64) (*models.Vehicle, error) {
+	var vehicle models.Vehicle
+	// query db, return any errors
+	err := DB.QueryRow("SELECT * FROM vehicle WHERE id=?", vehicleId).Scan(
+		&vehicle.ID,
+		&vehicle.Name,
+		&vehicle.Description,
+		&vehicle.Type,
+		&vehicle.Is_metric,
+		&vehicle.Vin,
+		&vehicle.Year,
+		&vehicle.Make,
+		&vehicle.Model,
+		&vehicle.Trim,
+		&vehicle.Odometer,
+		&vehicle.User,
+		&vehicle.Created_at,
+		&vehicle.Updated_at,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	return &vehicle, nil
+}
+
+// ListVehicles
+// Take filters as args, return Vehicle list
+func ListVehicles(userId *string, jobId *string, searchStr *string, sort *string) ([]*models.Vehicle, error) {
+	var joins []string
+	var wheres []string
+	var likes []Like
+	// establish default sort if not provided
+	var orderBy = "v.updated_at DESC"
+	// establish basic query
+	q := "SELECT * FROM vehicle AS v"
+	// if userId provided, add where to query
+	if userId != nil && len(*userId) > 0 {
+		wheres = append(wheres, "v.user="+*userId)
+	}
+	// if job ID provided join by jobID where vehicleID is present
+	if jobId != nil && len(*jobId) > 0 {
+		joins = append(joins, "JOIN job AS j ON v.id = j.vehicle")
+		wheres = append(wheres, "j.id="+*jobId)
+	}
+	// if search string provided, construct likes to query username, description cols
+	if searchStr != nil && len(*searchStr) > 0 {
+		var fields []string
+		fields = append(fields, "v.name")
+		fields = append(fields, "v.description")
+		fields = append(fields, "v.make")
+		fields = append(fields, "v.model")
+		fields = append(fields, "v.trim")
+		likes = append(likes, Like{
+			Fields: fields,
+			Match:  *searchStr,
+			Or:     true,
+		})
+	}
+	// if sort provided, append appropriate sort based on query param
+	if sort != nil && len(*sort) > 0 {
+		switch *sort {
+		case "az":
+			orderBy = "v.name ASC"
+		case "za":
+			orderBy = "v.name DESC"
+		case "completed":
+			orderBy = "v.completed_at DESC"
+		case "oldest":
+			orderBy = "v.created_at ASC"
+		case "newest":
+			orderBy = "v.created_at DESC"
+		case "last_updated":
+			orderBy = "v.updated_at DESC"
+		default:
+			orderBy = "v.updated_at DESC"
+		}
+	}
+	// generate query with QueryBuilder
+	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	// retrieve all matching rows
+	rows, err := DB.Query(query)
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+	// create list of Vehicle
+	vehicles := make([]*models.Vehicle, 0)
+	// loop through returned rows
+	for rows.Next() {
+		// attribute to Vehicle
+		vehicle := models.Vehicle{}
+		err := rows.Scan(
+			&vehicle.ID,
+			&vehicle.Name,
+			&vehicle.Description,
+			&vehicle.Type,
+			&vehicle.Is_metric,
+			&vehicle.Vin,
+			&vehicle.Year,
+			&vehicle.Make,
+			&vehicle.Model,
+			&vehicle.Trim,
+			&vehicle.Odometer,
+			&vehicle.User,
+			&vehicle.Created_at,
+			&vehicle.Updated_at,
+		)
+		if err != nil {
+			log.Printf("Error scanning rows retrieved from DB: %s", err)
+			return nil, err
+		}
+		// append Job to list of Job
+		vehicles = append(vehicles, &vehicle)
+	}
+	return vehicles, nil
+}
+
+// CreateVehicle
+// Takes newVehicle, creates in db, returns id
+func CreateVehicle(newVehicle models.NewVehicle) (*int64, error) {
+	// insert into db, return any errors
+	res, err := DB.Exec("INSERT INTO vehicle(Name, Description, Type, Is_metric, Vin, Year, Make, Model, Trim, Odometer, User) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+		newVehicle.Name,
+		newVehicle.Description,
+		newVehicle.Type,
+		newVehicle.Is_metric,
+		newVehicle.Vin,
+		newVehicle.Year,
+		newVehicle.Make,
+		newVehicle.Model,
+		newVehicle.Trim,
+		newVehicle.Odometer,
+		newVehicle.User,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	// get inserted vehicles id
+	vehicleId, err := res.LastInsertId()
+	return &vehicleId, err
+}
+
+// EditVehicle
+// Take Vehicle as arg, build update query with QueryBuilder, update it in db via generated query
+func EditVehicle(editedVehicle models.Vehicle) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE vehicle SET name=?, description=?, type=?, is_metric=?, vin=?, year=?, make=?, model=?, trim=?, odometer=?, user=?, updated_at=CURRENT_TIMESTAMP"
+	// add required wheres (ensures the vehicle id and user id in the db match that of request body)
+	wheres = append(wheres, "user=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, editedVehicle.Name, editedVehicle.Description, editedVehicle.Type, editedVehicle.Is_metric, editedVehicle.Vin, editedVehicle.Year, editedVehicle.Make, editedVehicle.Model, editedVehicle.Trim, editedVehicle.Odometer, editedVehicle.User, editedVehicle.User, editedVehicle.ID)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
+
+// DeleteVehicle
+// Take vehicle id as arg, delete Vehicle from vehicle table where id present
+func DeleteVehicle(vehicleId int64, userId *int64) error {
+	var wheres []string
+	q := "DELETE FROM vehicle"
+	wheres = append(wheres, "id="+strconv.FormatInt(vehicleId, 10))
+	if userId != nil {
+		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
+	}
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	res, err := DB.Exec(query)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}

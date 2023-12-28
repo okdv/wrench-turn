@@ -42,6 +42,7 @@ func main() {
 	authController := controllers.NewAuthController()
 	userController := controllers.NewUserController()
 	jobController := controllers.NewJobController()
+	vehicleController := controllers.NewVehicleController()
 
 	// initiate router
 	r := chi.NewRouter()
@@ -99,7 +100,12 @@ func main() {
 	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
 	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
 	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
-
+	// vehicle routes
+	r.Get("/vehicles", vehicleController.ListVehicles)
+	r.Get("/vehicles/{id:[0-9]+}", vehicleController.GetVehicle)
+	r.Post("/vehicles/create", authController.Verify(vehicleController.CreateVehicle))
+	r.Post("/vehicles/edit", authController.Verify(vehicleController.EditVehicle))
+	r.Delete("/vehicles/{id:[0-9]+}", authController.Verify(vehicleController.DeleteVehicle))
 	// serve router
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("PUBLIC_API_PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PUBLIC_API_PORT"), r))
