@@ -30,9 +30,9 @@ func (jc *JobController) GetJob(w http.ResponseWriter, r *http.Request) {
 	}
 	// call GetJob service, return Job
 	job, err := services.GetJob(jobId)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Unable to retrieve job: %v", err)
+	if err != nil || job == nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Job not found: %v", err)
 		return
 	}
 	// covnert to JSON response
