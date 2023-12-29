@@ -10,22 +10,26 @@
     let searchVehicleId = ''
     let isTemplateCheck = false
 
+    // runs on render
     const init = async() => {
+        // get all jobs
         const res = await getJobs()
         if (!res.ok) {
             const msg = await res.text()
             alert(`Something went wrong, please try again:\r\n${msg}`)
             return
         }
+        // assign jobs to state
         jobs = await res.json()
         if (jobs.length === 0) {
             err = true
         }
         return
     }
-    init()
 
-    const runSearch = async() => {
+    // runs on search btn
+    const updateSearch = async() => {
+        // create empty string obj, add items to obj for each filter 
         const params: {[key:string]: string}= {}
         if (searchStr.length > 0) {
             params["q"] = encodeURIComponent(searchStr)
@@ -48,19 +52,22 @@
             alert(`Something went wrong, please try again:\r\n${msg}`)
             return
         }
+        // update jobs
         const json = await  res.json()
         jobs = json
         return
     }
+
+    init()
 </script>
-<div>
+<div class="p-2">
     <div class="flex justify-between p-2">
-        <input bind:value={searchStr} placeholder="Search..." />
-        <input bind:value={searchUserId} placeholder="User ID..." />
-        <input bind:value={searchVehicleId} placeholder="Vehicle ID..." />
+        <input bind:value={searchStr} placeholder="Search..." class="border border-black" />
+        <input bind:value={searchUserId} placeholder="User ID..." class="border border-black" />
+        <input bind:value={searchVehicleId} placeholder="Vehicle ID..." class="border border-black" />
         <div>
             <input type="checkbox" bind:value={isTemplateCheck} id="is-template-check" name="is-template-check" />
-            <label for="is-template-check">Is template?</label>
+            <label for="is-template-check" class="select-none">Is template?</label>
         </div>
         <select bind:value={sortStr}>
             <option value="select-one">Sort by</option>
@@ -71,14 +78,16 @@
             <option value="oldest">Oldest</option>
             <option value="last_updated">Last updated</option>
         </select>
-        <button on:click={runSearch}>Search</button>
+        <button on:click={updateSearch}><i class="fa-solid fa-search border border-black bg-slate-300 p-1"></i></button>
     </div>
     {#if err === true}
         <p>Looks a little empty, try adding a job <a class="underline text-link" href="/jobs/create"><b>here</b></a></p>
     {:else}
-        <ul>
+        <ul class="p-2">
             {#each jobs as job}
-                <li>{job.name}</li>
+                <a href="/jobs/{job.id}">
+                    <li class="p-2 bg-slate-200 mb-1">{job.name}</li>
+                </a>
             {/each}
         </ul>
     {/if}
