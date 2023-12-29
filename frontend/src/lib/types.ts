@@ -8,7 +8,7 @@ export class NewJob {
     repeats: number
     odoInterval: number|null
     timeInterval: number|null
-    timeIntervalUnit: 'month' | 'day' | 'week' | 'hour' | null
+    timeIntervalUnit: 'month' | 'day' | 'week' | 'hour' | 'year' | null
     dueDate: string|null
     constructor() {
         this.name = null
@@ -38,7 +38,7 @@ export type Job = 	{
     repeats: number,
     odoInterval: number,
     timeInterval: number,
-    timeIntervalUnit: 'month' | 'day' | 'week' | 'hour',
+    timeIntervalUnit: 'month' | 'day' | 'week' | 'hour' | 'year',
     dueDate: number|null,
     completedAt: string|null,
     createdAt: string,
