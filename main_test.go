@@ -19,6 +19,7 @@ import (
 var r *chi.Mux
 var createdUser *models.User
 var createdJob *models.Job
+var createdTask *models.Task
 var createdVehicle *models.Vehicle
 var req *http.Request
 var w *httptest.ResponseRecorder
@@ -39,6 +40,7 @@ func TestMain(m *testing.M) {
 	userController := controllers.NewUserController()
 	authController := controllers.NewAuthController()
 	jobController := controllers.NewJobController()
+	taskController := controllers.NewTaskController()
 	vehicleController := controllers.NewVehicleController()
 	// create routes
 	// auth routes
@@ -57,6 +59,13 @@ func TestMain(m *testing.M) {
 	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
 	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
 	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
+	// task routes
+	r.Get("/jobs/{jobId:[0-9]+}/tasks", taskController.ListTasks)
+	r.Get("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}", taskController.GetTask)
+	r.Patch("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}/complete", authController.Verify(taskController.MarkComplete))
+	r.Post("/jobs/{jobId:[0-9]+}/tasks/create", authController.Verify(taskController.CreateTask))
+	r.Post("/jobs/{jobId:[0-9]+}/tasks/edit", authController.Verify(taskController.EditTask))
+	r.Delete("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}", authController.Verify(taskController.DeleteTask))
 	// vehicle routes
 	r.Get("/vehicles", vehicleController.ListVehicles)
 	r.Get("/vehicles/{id:[0-9]+}", vehicleController.GetVehicle)
@@ -457,8 +466,143 @@ func TestGetAndEditJob(t *testing.T) {
 	log.Print("Successfully edited job")
 }
 
+// TestCreateTask
+// Test creating task on job created by TestCreateJob
+func TestCreateTask(t *testing.T) {
+	// setuop new test job
+	newTask := &models.NewTask{
+		Name: "wrench-turn go test task",
+	}
+	// convert to json
+	jsonData, err := json.Marshal(newTask)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	log.Println(createdJob.User)
+	log.Println(createdUser.ID)
+	// create via api
+	req = httptest.NewRequest("POST", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusCreated, w.Code)
+	}
+	// error if unable to decode response
+	if err := json.NewDecoder(w.Body).Decode(&createdTask); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	log.Print("Successfully created task")
+}
+
+// TestListTasks
+// Tests getting all tasks for created job
+func TestListTasks(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var jobs *[]models.Job
+	if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if no returned users
+	if jobs == nil || len(*jobs) == 0 {
+		t.Errorf("No tasks retreived, at least one (test task from TestCreateTask) should exist")
+	}
+	log.Print("Successfully retrieved tasks")
+}
+
+// TestGetAndMarkCompleteAndEditTask
+// Tests getting and editing task created by TestCreateTask
+func TestGetAndMarkCompleteAndEditTask(t *testing.T) {
+	// mark complete in api
+	req = httptest.NewRequest("PATCH", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/"+strconv.FormatInt(createdTask.ID, 10)+"/complete", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// get from api
+	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/"+strconv.FormatInt(createdTask.ID, 10), nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var fetchedTask *models.Task
+	if err := json.NewDecoder(w.Body).Decode(&fetchedTask); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+
+	// error if returned taskID is not the same as created task ID
+	if fetchedTask.ID != createdTask.ID {
+		t.Errorf("Task ID %d fetched a different task, ID %d, than expected", createdTask.ID, fetchedTask.ID)
+	}
+
+	// error if task is not completed
+	if fetchedTask.Is_complete != 1 {
+		t.Error("Task should be completed, is still incomplete", http.StatusOK)
+	}
+	log.Print("Successfully retrieved test task")
+	// change job description
+	testDescription := "Test Description"
+	fetchedTask.Description = &testDescription
+	// convert to json
+	jsonData, err := json.Marshal(fetchedTask)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// edit via post req
+	req = httptest.NewRequest("POST", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/edit", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// decode body from json or error
+	if err := json.NewDecoder(w.Body).Decode(&fetchedTask); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// compare dscriptions to confirm successful edit
+	if fetchedTask.Description != &testDescription {
+		t.Error("Description was not updated")
+	}
+	log.Print("Successfully edited task")
+}
+
+// TestDeleteTask
+// Tests deleting the task created by TestCreateTask
+func TestDeleteTask(t *testing.T) {
+	// delete via api
+	req = httptest.NewRequest("DELETE", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/"+strconv.FormatInt(createdTask.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected http status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+		// if issue deleting task, log that id as it may need to be manually deleted from db
+		log.Printf("Test task ID %d may still exist, delete manually if so", createdJob.ID)
+	}
+	log.Print("Successfully deleted task")
+}
+
 // TestDeleteJob
-// Tests deleting the job created by TestCreateUser
+// Tests deleting the job created by TestCreateJob
 func TestDeleteJob(t *testing.T) {
 	// delete via api
 	req = httptest.NewRequest("DELETE", "/jobs/"+strconv.FormatInt(createdJob.ID, 10), nil)
