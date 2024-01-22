@@ -42,6 +42,7 @@ func main() {
 	authController := controllers.NewAuthController()
 	userController := controllers.NewUserController()
 	jobController := controllers.NewJobController()
+	taskController := controllers.NewTaskController()
 	vehicleController := controllers.NewVehicleController()
 
 	// initiate router
@@ -100,6 +101,13 @@ func main() {
 	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
 	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
 	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
+	// task routes
+	r.Get("/jobs/{jobId:[0-9]+}/tasks", taskController.ListTasks)
+	r.Get("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}", taskController.GetTask)
+	r.Patch("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}/complete", authController.Verify(taskController.MarkComplete))
+	r.Post("/jobs/{jobId:[0-9]+}/tasks/create", authController.Verify(taskController.CreateTask))
+	r.Post("/jobs/{jobId:[0-9]+}/tasks/edit", authController.Verify(taskController.EditTask))
+	r.Delete("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}", authController.Verify(taskController.DeleteTask))
 	// vehicle routes
 	r.Get("/vehicles", vehicleController.ListVehicles)
 	r.Get("/vehicles/{id:[0-9]+}", vehicleController.GetVehicle)

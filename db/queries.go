@@ -448,6 +448,219 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, searchStr *
 	return jobs, nil
 }
 
+// Task Queries
+
+// GetTask
+// Takes job id, queries it in db, returns Task
+func GetTask(jobId int64, taskId int64) (*models.Task, error) {
+	var task models.Task
+	// query db, return any errors
+	err := DB.QueryRow("SELECT * FROM task WHERE id=? AND job=?", taskId, jobId).Scan(
+		&task.ID,
+		&task.Name,
+		&task.Description,
+		&task.Is_complete,
+		&task.Job,
+		&task.Part_name,
+		&task.Part_link,
+		&task.Due_date,
+		&task.Completed_at,
+		&task.Created_at,
+		&task.Updated_at,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	return &task, nil
+}
+
+// CreateTask
+// Takes newTask, creates in db, returns id
+func CreateTask(newTask models.NewTask, jobId int64) (*int64, error) {
+	q := "INSERT INTO task(Name, Description, Job, Part_name, Part_link, Due_date) VALUES (?,?,?,?,?,?)"
+	log.Printf(q)
+	// insert into db, return any errors
+	res, err := DB.Exec("INSERT INTO task(Name, Description, Job, Part_name, Part_link, Due_date) VALUES (?,?,?,?,?,?)",
+		newTask.Name,
+		newTask.Description,
+		jobId,
+		newTask.Part_name,
+		newTask.Part_link,
+		newTask.Due_date,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	// get inserted tasks id
+	taskId, err := res.LastInsertId()
+	return &taskId, err
+}
+
+// EditTask
+// Take Task as arg, build update query with QueryBuilder, update it in db via generated query
+func EditTask(editedTask models.Task, jobId int64) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE task SET name=?, description=?, part_name=?, part_link=?, due_date=?, updated_at=CURRENT_TIMESTAMP"
+	// add required wheres (ensures the task id and user id in the db match that of request body)
+	wheres = append(wheres, "job=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, editedTask.Name, editedTask.Description, editedTask.Part_name, editedTask.Part_link, editedTask.Due_date, jobId, editedTask.ID)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
+
+// UpdateTaskStatus
+// Take job id, task id, status as args, build update query with QueryBuilder, update it in db via generated query
+func UpdateTaskStatus(jobId int64, taskId int64, status int) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE task SET is_complete=?, updated_at=CURRENT_TIMESTAMP"
+	// if status is complete, updated completed_at also
+	q += ", completed_at=CURRENT_TIMESTAMP"
+	// add required wheres (ensures the task id and user id in the db match that of request body)
+	wheres = append(wheres, "job=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, status, jobId, taskId)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
+
+// DeleteTask
+// Take task id as arg, delete Task from task table where id present
+func DeleteTask(jobId int64, taskId int64) error {
+	res, err := DB.Exec("DELETE FROM task WHERE id=? AND job=?", taskId, jobId)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}
+
+// ListTasks
+// Take filters as args, return Task list
+func ListTasks(jobId int64, isComplete *string, searchStr *string, sort *string) ([]*models.Task, error) {
+	var joins []string
+	var wheres []string
+	var likes []Like
+	// establish default sort if not provided
+	var orderBy = "t.updated_at DESC"
+	// establish basic query
+	q := "SELECT * FROM task AS t"
+	// if isTemplate provided, add where to query
+	if isComplete != nil && len(*isComplete) > 0 {
+		wheres = append(wheres, "t.is_complete="+*isComplete)
+	}
+	// add wheres for job id
+	wheres = append(wheres, "t.job="+strconv.FormatInt(jobId, 10))
+	// if search string provided, construct likes to query username, description cols
+	if searchStr != nil && len(*searchStr) > 0 {
+		var fields []string
+		fields = append(fields, "t.name")
+		fields = append(fields, "t.description")
+		likes = append(likes, Like{
+			Fields: fields,
+			Match:  *searchStr,
+			Or:     true,
+		})
+	}
+	// if sort provided, append appropriate sort based on query param
+	if sort != nil && len(*sort) > 0 {
+		switch *sort {
+		case "az":
+			orderBy = "t.name ASC"
+		case "za":
+			orderBy = "t.name DESC"
+		case "completed":
+			orderBy = "t.completed_at DESC"
+		case "oldest":
+			orderBy = "t.created_at ASC"
+		case "newest":
+			orderBy = "t.created_at DESC"
+		case "last_updated":
+			orderBy = "t.updated_at DESC"
+		default:
+			orderBy = "t.updated_at DESC"
+		}
+	}
+	// generate query with QueryBuilder
+	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	log.Printf(query)
+	// retrieve all matching rows
+	rows, err := DB.Query(query)
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+	// create list of Task
+	tasks := make([]*models.Task, 0)
+	// loop through returned rows
+	for rows.Next() {
+		// attribute to Task
+		task := models.Task{}
+		err := rows.Scan(
+			&task.ID,
+			&task.Name,
+			&task.Description,
+			&task.Is_complete,
+			&task.Job,
+			&task.Part_name,
+			&task.Part_link,
+			&task.Due_date,
+			&task.Completed_at,
+			&task.Created_at,
+			&task.Updated_at,
+		)
+		if err != nil {
+			log.Printf("Error scanning rows retrieved from DB: %s", err)
+			return nil, err
+		}
+		// append Task to list of Task
+		tasks = append(tasks, &task)
+	}
+	return tasks, nil
+}
+
 // Vehicle Queries
 
 // GetVehicle
