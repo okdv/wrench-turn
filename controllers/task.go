@@ -105,7 +105,7 @@ func (tc *TaskController) CreateTask(w http.ResponseWriter, r *http.Request, c *
 		return
 	}
 	// if newTask user is not requesting user, check if admin
-	if &job.User != &c.ID && c.Is_admin == false {
+	if job.User != c.ID && c.Is_admin == false {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to create tasks for other users jobs")
 		return
@@ -227,12 +227,12 @@ func (tc *TaskController) MarkComplete(w http.ResponseWriter, r *http.Request, c
 	err = services.MarkComplete(jobId, taskId, status)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "Unable to delete task: %v", err)
+		fmt.Fprintf(w, "Unable to mark task complete: %v", err)
 		return
 	}
 	// respond with text
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Task ID %v has been deleted", taskId)
+	fmt.Fprintf(w, "Task ID %v has been marked as complete", taskId)
 }
 
 // DeleteTask
