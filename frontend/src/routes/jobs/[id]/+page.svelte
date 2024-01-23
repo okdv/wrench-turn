@@ -64,6 +64,25 @@
         tasks = newTasks
     }
 
+    const handleToggleTask = async(task: Task, i: number) => {
+        const res = await apiRequest(`/jobs/${task.job}/tasks/${task.id}/complete?incomplete=${task.isComplete === 1}`, undefined, "PATCH", true)
+        if (!res.ok) {
+            if (res.status === 404) {
+                alert("Task not found")
+                return 
+            }
+            const msg = await res.text() 
+            alert(`Unable to get toggle task, please try again: \r\n${msg}`)
+            return
+        }
+        let newTasks = tasks 
+        newTasks[i] = {
+            ...task,
+            isComplete: task.isComplete === 1 ? 0 : 1
+        }
+        tasks = newTasks
+    }
+
     const init = async() => {
         // get job
         let res = await apiRequest(`/jobs/${$page.params.id}`)
@@ -141,7 +160,8 @@
                     }} />
                 {:else}
                     <li>
-                        <p>{task.name}</p>
+                        <input type="checkbox" on:change={() => handleToggleTask(task, i)} checked={task.isComplete === 1} id="task-{task.id}-checkbox" name="task-{task.id}-checkbox" />
+                        <label for="task-{task.id}-checkbox">{task.name}</label>
                         <button on:click={() => editTaskIdx = i}>Edit</button>
                     </li>
                 {/if}
