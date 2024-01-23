@@ -52,7 +52,7 @@ func main() {
 	// set cors for router
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{os.Getenv("PUBLIC_FRONTEND_URL")},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           300,
