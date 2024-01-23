@@ -45,6 +45,35 @@ export type Job = 	{
     updatedAt: string,
 }
 
+export class NewTask {
+    name: string
+    description: string|null
+    partName: string|null
+    partLink: string|null
+    dueDate: string|null
+    constructor(name?: string, description?: string | null, partName?: string | null, partLink?: string | null, dueDate?: string | null) {
+        this.name = name ?? ""
+        this.description = description ?? null 
+        this.partName = partName ?? null 
+        this.partLink = partLink ?? null
+        this.dueDate = dueDate ?? null
+    }
+}
+
+export type Task = 	{
+    id: number,
+    name: string,
+    description: string|null,
+    isComplete: number,
+    job: number,
+    partName: string|null,
+    partLink: string|null,
+    dueDate: string|null,
+    completedAt: string|null,
+    createdAt: string,
+    updatedAt: string,
+}
+
 export class NewVehicle {
     name: string
     description: string|null
