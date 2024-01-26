@@ -44,6 +44,7 @@ func main() {
 	jobController := controllers.NewJobController()
 	taskController := controllers.NewTaskController()
 	vehicleController := controllers.NewVehicleController()
+	alertController := controllers.NewAlertController()
 
 	// initiate router
 	r := chi.NewRouter()
@@ -114,6 +115,13 @@ func main() {
 	r.Post("/vehicles/create", authController.Verify(vehicleController.CreateVehicle))
 	r.Post("/vehicles/edit", authController.Verify(vehicleController.EditVehicle))
 	r.Delete("/vehicles/{id:[0-9]+}", authController.Verify(vehicleController.DeleteVehicle))
+	// alert routes
+	r.Get("/alerts", authController.Verify(alertController.ListAlerts))
+	r.Get("/alerts/{id:[0-9]+}", authController.Verify(alertController.GetAlert))
+	r.Patch("/alerts/{id:[0-9]+}/read", authController.Verify(alertController.MarkRead))
+	r.Post("/alerts/create", authController.Verify(alertController.CreateAlert))
+	r.Post("/alerts/edit", authController.Verify(alertController.EditAlert))
+	r.Delete("/alerts/{id:[0-9]+}", authController.Verify(alertController.DeleteAlert))
 	// serve router
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("PUBLIC_API_PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PUBLIC_API_PORT"), r))

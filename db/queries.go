@@ -866,3 +866,242 @@ func DeleteVehicle(vehicleId int64, userId *int64) error {
 
 	return nil
 }
+
+// Alert Queries
+
+// GetAlert
+// Takes alert id, queries it in db, returns Alert
+func GetAlert(alertId int64) (*models.Alert, error) {
+	var alert models.Alert
+	// query db, return any errors
+	err := DB.QueryRow("SELECT * FROM alert WHERE id=?", alertId).Scan(
+		&alert.ID,
+		&alert.Name,
+		&alert.Description,
+		&alert.Type,
+		&alert.User,
+		&alert.Vehicle,
+		&alert.Job,
+		&alert.Task,
+		&alert.Is_read,
+		&alert.Read_at,
+		&alert.Created_at,
+		&alert.Updated_at,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	return &alert, nil
+}
+
+// CreateAlert
+// Takes newAlert, creates in db, returns id
+func CreateAlert(newAlert models.NewAlert) (*int64, error) {
+	// insert into db, return any errors
+	res, err := DB.Exec("INSERT INTO alert(Name, Description, User, Vehicle, Job, Task) VALUES (?, ?, ?, ?, ?, ?)",
+		newAlert.Name,
+		newAlert.Description,
+		newAlert.User,
+		newAlert.Vehicle,
+		newAlert.Job,
+		newAlert.Task,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	// get inserted alerts id
+	alertId, err := res.LastInsertId()
+	return &alertId, err
+}
+
+// EditAlert
+// Take Alert as arg, build update query with QueryBuilder, update it in db via generated query
+func EditAlert(editedAlert models.Alert) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE alert SET name=?, description=?, type=?, user=?, vehicle=?, job=?, task=?, is_read=?, updated_at=CURRENT_TIMESTAMP"
+	// add required wheres (ensures the alert id and user id in the db match that of request body)
+	wheres = append(wheres, "user=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, editedAlert.Name, editedAlert.Description, editedAlert.Type, editedAlert.User, editedAlert.Vehicle, editedAlert.Job, editedAlert.Task, editedAlert.Is_read, editedAlert.User, editedAlert.ID)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
+
+// DeleteAlert
+// Take alert id as arg, delete Alert from alert table where id present
+func DeleteAlert(alertId int64, userId *int64) error {
+	var wheres []string
+	q := "DELETE FROM alert"
+	wheres = append(wheres, "id="+strconv.FormatInt(alertId, 10))
+	if userId != nil {
+		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
+	}
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	res, err := DB.Exec(query)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}
+
+// ListAlerts
+// Take filters as args, return Alert list
+func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string, typeStr *string, isRead *string, searchStr *string, sort *string) ([]*models.Alert, error) {
+	var joins []string
+	var wheres []string
+	var likes []Like
+	// establish default sort if not provided
+	var orderBy = "a.updated_at DESC"
+	// establish basic query
+	q := "SELECT * FROM alert AS a"
+	// if userId provided, add where to query
+	if userId != nil && len(*userId) > 0 {
+		wheres = append(wheres, "a.user="+*userId)
+	}
+	// if vehicleId provided, addawhere to query
+	if vehicleId != nil && len(*vehicleId) > 0 {
+		wheres = append(wheres, "a.vehicle="+*vehicleId)
+	}
+	// if jobId provided, addawhere to query
+	if jobId != nil && len(*jobId) > 0 {
+		wheres = append(wheres, "a.job="+*jobId)
+	}
+	// if taskId provided, addawhere to query
+	if taskId != nil && len(*taskId) > 0 {
+		wheres = append(wheres, "a.task="+*taskId)
+	}
+	// if typeStr provided, addawhere to query
+	if typeStr != nil && len(*typeStr) > 0 {
+		wheres = append(wheres, "a.type="+*typeStr)
+	}
+	// if isRead provided, add where to query
+	if isRead != nil && len(*isRead) > 0 {
+		wheres = append(wheres, "a.is_read="+*isRead)
+	}
+	// if search string provided, construct likes to query username, description cols
+	if searchStr != nil && len(*searchStr) > 0 {
+		var fields []string
+		fields = append(fields, "a.name")
+		fields = append(fields, "a.description")
+		likes = append(likes, Like{
+			Fields: fields,
+			Match:  *searchStr,
+			Or:     true,
+		})
+	}
+	// if sort provided, append appropriate sort based on query param
+	if sort != nil && len(*sort) > 0 {
+		switch *sort {
+		case "az":
+			orderBy = "a.name ASC"
+		case "za":
+			orderBy = "a.name DESC"
+		case "completed":
+			orderBy = "a.completed_at DESC"
+		case "oldest":
+			orderBy = "a.created_at ASC"
+		case "newest":
+			orderBy = "a.created_at DESC"
+		case "last_updated":
+			orderBy = "a.updated_at DESC"
+		default:
+			orderBy = "a.updated_at DESC"
+		}
+	}
+	// generate query with QueryBuilder
+	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	// retrieve all matching rows
+	rows, err := DB.Query(query)
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+	// create list of Alert
+	alerts := make([]*models.Alert, 0)
+	// loop through returned rows
+	for rows.Next() {
+		// attribute to Alert
+		alert := models.Alert{}
+		err := rows.Scan(
+			&alert.ID,
+			&alert.Name,
+			&alert.Description,
+			&alert.Type,
+			&alert.User,
+			&alert.Vehicle,
+			&alert.Job,
+			&alert.Task,
+			&alert.Is_read,
+			&alert.Read_at,
+			&alert.Created_at,
+			&alert.Updated_at,
+		)
+		if err != nil {
+			log.Printf("Error scanning rows retrieved from DB: %s", err)
+			return nil, err
+		}
+		// append Alert to list of Alert
+		alerts = append(alerts, &alert)
+	}
+	return alerts, nil
+}
+
+// UpdatedAlertStatus
+// Take alert id, user id, status as args, build update query with QueryBuilder, update it in db via generated query
+func UpdatedAlertStatus(alertId int64, userId int64, status int) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE alert SET is_read=?, updated_at=CURRENT_TIMESTAMP"
+	// if status is complete, updated completed_at also
+	if status == 1 {
+		q += ", read_at=CURRENT_TIMESTAMP"
+	}
+	// add required wheres (ensures the alert id and user id in the db match that of request body)
+	wheres = append(wheres, "user=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, status, userId, alertId)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
