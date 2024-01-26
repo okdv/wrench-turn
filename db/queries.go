@@ -531,7 +531,9 @@ func UpdateTaskStatus(jobId int64, taskId int64, status int) error {
 	// setup query
 	q := "UPDATE task SET is_complete=?, updated_at=CURRENT_TIMESTAMP"
 	// if status is complete, updated completed_at also
-	q += ", completed_at=CURRENT_TIMESTAMP"
+	if status == 1 {
+		q += ", completed_at=CURRENT_TIMESTAMP"
+	}
 	// add required wheres (ensures the task id and user id in the db match that of request body)
 	wheres = append(wheres, "job=?")
 	wheres = append(wheres, "id=?")
