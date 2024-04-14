@@ -118,6 +118,41 @@ export type Vehicle = 	{
     updatedAt: string,
 }
 
+type AlertType = 'notification' | 'reminder'
+export class NewAlert {
+    name: string
+    description: string|null
+    type: AlertType
+    user: number
+    vehicle: number|null
+    job: number|null
+    task: number|null
+    constructor(name?: string, description?: string | null, type?: AlertType, user?: number, vehicle?: number | null, job?: number | null, task?: number | null) {
+        this.name = name ?? ""
+        this.description = description ?? null 
+        this.type = type ?? 'notification' 
+        this.user = user ?? 0
+        this.vehicle = user ?? null
+        this.job = user ?? null
+        this.task = user ?? null
+    }
+}
+
+export type Alert = 	{
+    id: number,
+    name: string,
+    description: string|null,
+    type: AlertType,
+    user: number,
+    vehicle: number|null,
+    job: number|null,
+    task: number|null,
+    isRead: number,
+    readAt: string|null,
+    createdAt: string,
+    updatedAt: string,
+}
+
 
 export class User {
     id: number

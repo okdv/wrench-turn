@@ -140,3 +140,17 @@ export const getUser = async(username?: string): Promise<Response> => {
     }
     return apiRequest(`/users/${username}`, undefined, 'GET', true, false)
 }
+// getAlerts
+// apiRequest proxy purpose built for get alerts endpoint
+export const getAlerts = async(params?: {[key:string]:string}): Promise<Response> => {
+    const paramStr = await paramStrConstruct(params)
+    return apiRequest(`/alerts${paramStr}`, undefined, 'GET')
+}
+// updateAlertReadStatus
+// apiRequest proxy purpose build for updated read status of an alert
+export const updateAlertReadStatus = async(alertId: number, unread?: boolean): Promise<Response> => {
+    if (unread === true) {
+        return apiRequest(`/alerts/${alertId}/read?unread=true`, undefined, 'PATCH')
+    }
+    return apiRequest(`/alerts/${alertId}/read`, undefined, 'PATCH')
+}
