@@ -21,6 +21,7 @@ var createdUser *models.User
 var createdJob *models.Job
 var createdTask *models.Task
 var createdVehicle *models.Vehicle
+var createdAlert *models.Alert
 var req *http.Request
 var w *httptest.ResponseRecorder
 var testUsername string
@@ -42,6 +43,8 @@ func TestMain(m *testing.M) {
 	jobController := controllers.NewJobController()
 	taskController := controllers.NewTaskController()
 	vehicleController := controllers.NewVehicleController()
+	alertController := controllers.NewAlertController()
+
 	// create routes
 	// auth routes
 	r.Post("/auth", authController.Auth)
@@ -72,6 +75,13 @@ func TestMain(m *testing.M) {
 	r.Post("/vehicles/create", authController.Verify(vehicleController.CreateVehicle))
 	r.Post("/vehicles/edit", authController.Verify(vehicleController.EditVehicle))
 	r.Delete("/vehicles/{id:[0-9]+}", authController.Verify(vehicleController.DeleteVehicle))
+	// alert routes
+	r.Get("/alerts", authController.Verify(alertController.ListAlerts))
+	r.Get("/alerts/{id:[0-9]+}", authController.Verify(alertController.GetAlert))
+	r.Patch("/alerts/{id:[0-9]+}/read", authController.Verify(alertController.MarkRead))
+	r.Post("/alerts/create", authController.Verify(alertController.CreateAlert))
+	r.Post("/alerts/edit", authController.Verify(alertController.EditAlert))
+	r.Delete("/alerts/{id:[0-9]+}", authController.Verify(alertController.DeleteAlert))
 	// after all tests, close db
 	defer DB.Close()
 	// run tests
@@ -582,6 +592,146 @@ func TestGetAndMarkCompleteAndEditTask(t *testing.T) {
 		t.Error("Description was not updated")
 	}
 	log.Print("Successfully edited task")
+}
+
+// TestCreateAlert
+// Tests creating a alert with user created by TestCreateUser
+func TestCreateAlert(t *testing.T) {
+	alertName := "wrench-turn go test alert"
+	// setuop new test alert
+	newAlert := &models.NewAlert{
+		Name:    &alertName,
+		Type:    "notification",
+		Vehicle: &createdVehicle.ID,
+		Job:     &createdJob.ID,
+		Task:    &createdTask.ID,
+	}
+	// convert to json
+	jsonData, err := json.Marshal(newAlert)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// create via api
+	req = httptest.NewRequest("POST", "/alerts/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	if err := json.NewDecoder(w.Body).Decode(&createdAlert); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	log.Print("Successfully created alert")
+}
+
+// TestListAlerts
+// Tests getting all alerts
+func TestListAlerts(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/alerts", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var alerts *[]models.Alert
+	if err := json.NewDecoder(w.Body).Decode(&alerts); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if no returned alerts
+	if alerts == nil || len(*alerts) == 0 {
+		t.Errorf("No alerts retreived, at least one (test alerts from TestCreateAlert) should exist")
+	}
+	log.Print("Successfully retrieved alerts")
+}
+
+// TestGetAndMarkReadAndEditAlert
+// Tests getting and editing alert created by TestCreateAlert
+func TestGetAndMarkReadAndEditAlert(t *testing.T) {
+	// mark read in api
+	req = httptest.NewRequest("PATCH", "/alerts/"+strconv.FormatInt(createdAlert.ID, 10)+"/read", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// get from api
+	req = httptest.NewRequest("GET", "/alerts/"+strconv.FormatInt(createdAlert.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var fetchedAlert *models.Alert
+	if err := json.NewDecoder(w.Body).Decode(&fetchedAlert); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+
+	// error if returned taskID is not the same as created alert ID
+	if fetchedAlert.ID != createdAlert.ID {
+		t.Errorf("Alert ID %d fetched a different alert, ID %d, than expected", createdAlert.ID, fetchedAlert.ID)
+	}
+
+	// error if alert is not read
+	if *fetchedAlert.Is_read != 1 {
+		t.Error("Alert should be read, is still unread", http.StatusOK)
+	}
+	log.Print("Successfully retrieved test alert")
+	// change job description
+	testDescription := "Test Description"
+	fetchedAlert.Description = &testDescription
+	// convert to json
+	jsonData, err := json.Marshal(fetchedAlert)
+	if err != nil {
+		t.Errorf("Error encoding request body: %v", err)
+	}
+	// edit via post req
+	req = httptest.NewRequest("POST", "/alerts/edit", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// decode body from json or error
+	if err := json.NewDecoder(w.Body).Decode(&fetchedAlert); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// compare dscriptions to confirm successful edit
+	if fetchedAlert.Description != &testDescription {
+		t.Error("Description was not updated")
+	}
+	log.Print("Successfully edited alert")
+}
+
+// TestDeleteAlert
+// Tests deleting the alert created by TestCreateTask
+func TestDeleteAlert(t *testing.T) {
+	// delete via api
+	req = httptest.NewRequest("DELETE", "/alerts/"+strconv.FormatInt(createdAlert.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected http status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+		// if issue deleting alert, log that id as it may need to be manually deleted from db
+		log.Printf("Test alert ID %d may still exist, delete manually if so", createdAlert.ID)
+	}
+	log.Print("Successfully deleted alert")
 }
 
 // TestDeleteTask
