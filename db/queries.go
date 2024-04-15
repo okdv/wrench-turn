@@ -887,6 +887,7 @@ func GetAlert(alertId int64) (*models.Alert, error) {
 		&alert.Task,
 		&alert.Is_read,
 		&alert.Read_at,
+		&alert.Alert_at,
 		&alert.Created_at,
 		&alert.Updated_at,
 	)
@@ -901,13 +902,14 @@ func GetAlert(alertId int64) (*models.Alert, error) {
 // Takes newAlert, creates in db, returns id
 func CreateAlert(newAlert models.NewAlert) (*int64, error) {
 	// insert into db, return any errors
-	res, err := DB.Exec("INSERT INTO alert(Name, Description, User, Vehicle, Job, Task) VALUES (?, ?, ?, ?, ?, ?)",
+	res, err := DB.Exec("INSERT INTO alert(Name, Description, User, Vehicle, Job, Task, Alert_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		newAlert.Name,
 		newAlert.Description,
 		newAlert.User,
 		newAlert.Vehicle,
 		newAlert.Job,
 		newAlert.Task,
+		newAlert.Alert_at,
 	)
 	if err != nil {
 		log.Printf("DB Execution Error: %s", err)
@@ -923,14 +925,14 @@ func CreateAlert(newAlert models.NewAlert) (*int64, error) {
 func EditAlert(editedAlert models.Alert) error {
 	var wheres []string
 	// setup query
-	q := "UPDATE alert SET name=?, description=?, type=?, user=?, vehicle=?, job=?, task=?, is_read=?, updated_at=CURRENT_TIMESTAMP"
+	q := "UPDATE alert SET name=?, description=?, type=?, user=?, vehicle=?, job=?, task=?, is_read=?, alert_at=?, updated_at=CURRENT_TIMESTAMP"
 	// add required wheres (ensures the alert id and user id in the db match that of request body)
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
 	query := QueryBuilder(q, nil, &wheres, nil, nil)
 	// exec query
-	res, err := DB.Exec(query, editedAlert.Name, editedAlert.Description, editedAlert.Type, editedAlert.User, editedAlert.Vehicle, editedAlert.Job, editedAlert.Task, editedAlert.Is_read, editedAlert.User, editedAlert.ID)
+	res, err := DB.Exec(query, editedAlert.Name, editedAlert.Description, editedAlert.Type, editedAlert.User, editedAlert.Vehicle, editedAlert.Job, editedAlert.Task, editedAlert.Is_read, editedAlert.Alert_at, editedAlert.User, editedAlert.ID)
 	if err != nil {
 		log.Printf("DB Execution Error: %s", err)
 		return err
@@ -977,7 +979,7 @@ func DeleteAlert(alertId int64, userId *int64) error {
 
 // ListAlerts
 // Take filters as args, return Alert list
-func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string, typeStr *string, isRead *string, searchStr *string, sort *string) ([]*models.Alert, error) {
+func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string, typeStr *string, isRead *string, alertDate *string, searchStr *string, sort *string) ([]*models.Alert, error) {
 	var joins []string
 	var wheres []string
 	var likes []Like
@@ -1008,6 +1010,10 @@ func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string
 	// if isRead provided, add where to query
 	if isRead != nil && len(*isRead) > 0 {
 		wheres = append(wheres, "a.is_read="+*isRead)
+	}
+	// if alertDate provided, add where to query
+	if alertDate != nil {
+		wheres = append(wheres, "a.alert_at<='"+*alertDate+"'")
 	}
 	// if search string provided, construct likes to query username, description cols
 	if searchStr != nil && len(*searchStr) > 0 {
@@ -1065,6 +1071,7 @@ func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string
 			&alert.Task,
 			&alert.Is_read,
 			&alert.Read_at,
+			&alert.Alert_at,
 			&alert.Created_at,
 			&alert.Updated_at,
 		)

@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"time"
 
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
@@ -41,8 +42,16 @@ func EditAlert(editedAlert models.Alert) (*models.Alert, error) {
 
 // ListAlerts
 // Takes URL query params as args, passes to ListAlerts query, returns Alert list
-func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string, typeStr *string, isRead *string, searchStr *string, sort *string) ([]*models.Alert, error) {
-	users, err := db.ListAlerts(userId, vehicleId, jobId, taskId, typeStr, isRead, searchStr, sort)
+func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string, typeStr *string, isRead *string, isAlerted *string, searchStr *string, sort *string) ([]*models.Alert, error) {
+	var alertDate *string
+	if isAlerted != nil {
+		if *isAlerted == "true" {
+			currentDatetime := time.Now()
+			currentDatetimeStr := currentDatetime.Format("2006-01-02T15:04:05Z")
+			alertDate = &currentDatetimeStr
+		}
+	}
+	users, err := db.ListAlerts(userId, vehicleId, jobId, taskId, typeStr, isRead, alertDate, searchStr, sort)
 	return users, err
 }
 

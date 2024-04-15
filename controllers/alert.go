@@ -65,6 +65,8 @@ func (ac *AlertController) ListAlerts(w http.ResponseWriter, r *http.Request, c 
 	taskId := r.URL.Query().Get("task")
 	typeStr := r.URL.Query().Get("type")
 	isRead := r.URL.Query().Get("read")
+	// isAlerted refers to if the 'alert_at' date is prior to current date
+	isAlerted := r.URL.Query().Get("isAlerted")
 	searchStr := r.URL.Query().Get("q")
 	sort := r.URL.Query().Get("sort")
 	// set newAlert.user is nil, set to current user
@@ -78,7 +80,7 @@ func (ac *AlertController) ListAlerts(w http.ResponseWriter, r *http.Request, c 
 		return
 	}
 	// call ListAlerts service
-	alerts, err := services.ListAlerts(&userId, &vehicleId, &jobId, &taskId, &typeStr, &isRead, &searchStr, &sort)
+	alerts, err := services.ListAlerts(&userId, &vehicleId, &jobId, &taskId, &typeStr, &isRead, &isAlerted, &searchStr, &sort)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to retrieve any alerts: %v", err)
