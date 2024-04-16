@@ -61,6 +61,7 @@ func TestMain(m *testing.M) {
 	// job routes
 	r.Get("/jobs", jobController.ListJobs)
 	r.Get("/jobs/{id:[0-9]+}", jobController.GetJob)
+	r.Post("/jobs/{jobId:[0-9]+}/assignLabel/{labelId:[0-9]+}", authController.Verify(jobController.AssignJobLabel))
 	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
 	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
 	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
@@ -436,6 +437,32 @@ func TestCreateLabel(t *testing.T) {
 		t.Errorf("Error decoding response body: %v", err)
 	}
 	log.Print("Successfully created label")
+}
+
+// TestAssignAndUnassignJobLabel
+// Tests assigning and unassigning a label created by TestCreateLabel to job created by TestCreateJob
+func TestAssignAndUnassignJobLabel(t *testing.T) {
+	// assign via api
+	req = httptest.NewRequest("POST", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/assignLabel/"+strconv.FormatInt(createdLabel.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	log.Print("Successfully assigned label")
+
+	// unassign via api
+	req = httptest.NewRequest("POST", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/assignLabel/"+strconv.FormatInt(createdLabel.ID, 10)+"?unassign=true", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	log.Print("Successfully unassigned label")
 }
 
 // TestListJobs
