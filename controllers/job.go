@@ -181,3 +181,63 @@ func (jc *JobController) DeleteJob(w http.ResponseWriter, r *http.Request, c *mo
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Job ID %v has been deleted", jobId)
 }
+
+// AssignJobLabel
+// Assign label to a job
+func (jc *JobController) AssignJobLabel(w http.ResponseWriter, r *http.Request, c *models.Claims) {
+	// get URL query params, convert to int
+	unassign := r.URL.Query().Get("unassign")
+	assign := 1
+	if unassign == "true" {
+		assign = 0
+	}
+	// get job from url
+	jobId, err := strconv.ParseInt(chi.URLParam(r, "jobId"), 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Job ID must be an integer: %v", err)
+		return
+	}
+	// get label id from url params, parse into int
+	labelId, err := strconv.ParseInt(chi.URLParam(r, "labelId"), 10, 64)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "ID must be an integer: %v", err)
+		return
+	}
+	// get Job Data
+	job, err := services.GetJob(jobId)
+	if job == nil || err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Job ID %d not found: %v", jobId, err)
+		return
+	}
+	// if requesting users id doesnt match user from job, and they are not an admin, throw error
+	if (c.ID != job.User) && (c.Is_admin != true) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, "Must be admin to assign labels to other users jobs")
+		return
+	}
+	// get Label Data
+	label, err := services.GetLabel(labelId)
+	if label == nil || err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "Label ID %d not found: %v", labelId, err)
+		return
+	}
+	// if requesting users id doesnt match user from label, and they are not an admin, throw error
+	if (c.ID != label.User) && (c.Is_admin != true) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, "Must be admin to assign other users labels to jobs")
+		return
+	}
+	_, err = services.AssignJobLabel(jobId, labelId, assign)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Unable to assign label to job: %v", err)
+		return
+	}
+	// respond with text
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Label ID %v has been assigned to Job ID %v", labelId, jobId)
+}

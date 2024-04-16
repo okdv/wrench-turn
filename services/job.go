@@ -60,3 +60,16 @@ func DeleteJob(jobId int64, userId *int64) error {
 	err := db.DeleteJob(jobId, userId)
 	return err
 }
+
+// AssignJobLabel
+// Takes job id, label id, creates an entry into job_label if assigning, otherwise deletes any existing entry
+func AssignJobLabel(jobId int64, taskId int64, assign int) (*int64, error) {
+	// if assigning, call that query and return
+	if assign == 1 {
+		relationshipId, err := db.AssignJobLabel(jobId, taskId)
+		return relationshipId, err
+	}
+	// otherwise call unassign query
+	err := db.UnassignJobLabel(jobId, taskId)
+	return nil, err
+}

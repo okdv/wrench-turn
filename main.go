@@ -45,6 +45,7 @@ func main() {
 	taskController := controllers.NewTaskController()
 	vehicleController := controllers.NewVehicleController()
 	alertController := controllers.NewAlertController()
+	labelController := controllers.NewLabelController()
 
 	// initiate router
 	r := chi.NewRouter()
@@ -99,6 +100,7 @@ func main() {
 	// job routes
 	r.Get("/jobs", jobController.ListJobs)
 	r.Get("/jobs/{id:[0-9]+}", jobController.GetJob)
+	r.Post("/jobs/{jobId:[0-9]+}/assignLabel/{labelId:[0-9]+}", authController.Verify(jobController.AssignJobLabel))
 	r.Post("/jobs/create", authController.Verify(jobController.CreateJob))
 	r.Post("/jobs/edit", authController.Verify(jobController.EditJob))
 	r.Delete("/jobs/{id:[0-9]+}", authController.Verify(jobController.DeleteJob))
@@ -122,6 +124,12 @@ func main() {
 	r.Post("/alerts/create", authController.Verify(alertController.CreateAlert))
 	r.Post("/alerts/edit", authController.Verify(alertController.EditAlert))
 	r.Delete("/alerts/{id:[0-9]+}", authController.Verify(alertController.DeleteAlert))
+	// label routes
+	r.Get("/labels", authController.Verify(labelController.ListLabels))
+	r.Get("/labels/{id:[0-9]+}", authController.Verify(labelController.GetLabel))
+	r.Post("/labels/create", authController.Verify(labelController.CreateLabel))
+	r.Post("/labels/edit", authController.Verify(labelController.EditLabel))
+	r.Delete("/labels/{id:[0-9]+}", authController.Verify(labelController.DeleteLabel))
 	// serve router
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("PUBLIC_API_PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PUBLIC_API_PORT"), r))

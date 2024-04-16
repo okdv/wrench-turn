@@ -1114,3 +1114,222 @@ func UpdatedAlertStatus(alertId int64, userId int64, status int) error {
 	}
 	return nil
 }
+
+// Label Queries
+
+// GetLabel
+// Takes label id, queries it in db, returns Label
+func GetLabel(labelId int64) (*models.Label, error) {
+	var label models.Label
+	// query db, return any errors
+	err := DB.QueryRow("SELECT * FROM label WHERE id=?", labelId).Scan(
+		&label.ID,
+		&label.Name,
+		&label.Color,
+		&label.User,
+		&label.Created_at,
+		&label.Updated_at,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	return &label, nil
+}
+
+// CreateLabel
+// Takes newLabel, creates in db, returns id
+func CreateLabel(newLabel models.NewLabel) (*int64, error) {
+	// insert into db, return any errors
+	res, err := DB.Exec("INSERT INTO label(Name, Color, User) VALUES (?,?,?)",
+		newLabel.Name,
+		newLabel.Color,
+		newLabel.User,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	// get inserted labels id
+	labelId, err := res.LastInsertId()
+	return &labelId, err
+}
+
+// EditLabel
+// Take Label as arg, build update query with QueryBuilder, update it in db via generated query
+func EditLabel(editedLabel models.Label) error {
+	var wheres []string
+	// setup query
+	q := "UPDATE label SET name=?, color=?, updated_at=CURRENT_TIMESTAMP"
+	// add required wheres (ensures the label id and user id in the db match that of request body)
+	wheres = append(wheres, "user=?")
+	wheres = append(wheres, "id=?")
+	// get generated query
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	// exec query
+	res, err := DB.Exec(query, editedLabel.Name, editedLabel.Color, editedLabel.User, editedLabel.ID)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count, error if 0
+	rowCount, err := res.RowsAffected()
+	if rowCount == 0 || err != nil {
+		log.Printf("No rows updated: %v", err)
+		return errors.New("No rows updated")
+	}
+	return nil
+}
+
+// DeleteLabel
+// Take label id as arg, delete Label from label table where id present
+func DeleteLabel(labelId int64, userId *int64) error {
+	var wheres []string
+	q := "DELETE FROM label"
+	wheres = append(wheres, "id="+strconv.FormatInt(labelId, 10))
+	if userId != nil {
+		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
+	}
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	res, err := DB.Exec(query)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}
+
+// ListLabels
+// Take filters as args, return Label list
+func ListLabels(userId *string, searchStr *string, sort *string) ([]*models.Label, error) {
+	var joins []string
+	var wheres []string
+	var likes []Like
+	// establish default sort if not provided
+	var orderBy = "l.updated_at DESC"
+	// establish basic query
+	q := "SELECT * FROM label AS l"
+	// if userId provided, add where to query
+	if userId != nil && len(*userId) > 0 {
+		wheres = append(wheres, "l.user="+*userId)
+	}
+	// if search string provided, construct likes to query username, description cols
+	if searchStr != nil && len(*searchStr) > 0 {
+		var fields []string
+		fields = append(fields, "l.name")
+		likes = append(likes, Like{
+			Fields: fields,
+			Match:  *searchStr,
+			Or:     true,
+		})
+	}
+	// if sort provided, append appropriate sort based on query param
+	if sort != nil && len(*sort) > 0 {
+		switch *sort {
+		case "az":
+			orderBy = "l.name ASC"
+		case "za":
+			orderBy = "l.name DESC"
+		case "oldest":
+			orderBy = "l.created_at ASC"
+		case "newest":
+			orderBy = "l.created_at DESC"
+		case "last_updated":
+			orderBy = "l.updated_at DESC"
+		default:
+			orderBy = "l.updated_at DESC"
+		}
+	}
+	// generate query with QueryBuilder
+	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	// retrieve all matching rows
+	rows, err := DB.Query(query)
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return nil, err
+	}
+	defer rows.Close()
+	// create list of Label
+	labels := make([]*models.Label, 0)
+	// loop through returned rows
+	for rows.Next() {
+		// attribute to Label
+		label := models.Label{}
+		err := rows.Scan(
+			&label.ID,
+			&label.Name,
+			&label.Color,
+			&label.User,
+			&label.Created_at,
+			&label.Updated_at,
+		)
+		if err != nil {
+			log.Printf("Error scanning rows retrieved from DB: %s", err)
+			return nil, err
+		}
+		// append Label to list of Label
+		labels = append(labels, &label)
+	}
+	return labels, nil
+}
+
+// AssignJobLabel
+// Takes job id and task id, creates job_label in db, returns id
+func AssignJobLabel(jobId int64, labelId int64) (*int64, error) {
+	q := "INSERT INTO job_label(Job, Label) VALUES (?,?)"
+	log.Printf(q)
+	// insert into db, return any errors
+	res, err := DB.Exec(q,
+		jobId,
+		labelId,
+	)
+	if err != nil {
+		log.Printf("DB Execution Error: %s", err)
+		return nil, err
+	}
+	// get inserted tasks id
+	taskId, err := res.LastInsertId()
+	return &taskId, err
+}
+
+// UnassignJobLabel
+// Takes job id and task id, deletes job_label entry in db if its exists
+func UnassignJobLabel(jobId int64, labelId int64) error {
+	var wheres []string
+	q := "DELETE FROM job_label"
+	wheres = append(wheres, "job="+strconv.FormatInt(jobId, 10))
+	wheres = append(wheres, "label="+strconv.FormatInt(labelId, 10))
+	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	res, err := DB.Exec(query)
+	// throw SQL errors
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// retrieve rows affected count
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("DB Query Error: %s", err)
+		return err
+	}
+	// throw error if no rows affected
+	if rows == 0 {
+		log.Printf("No rows deleted")
+		return errors.New("No rows deleted")
+	}
+
+	return nil
+}
