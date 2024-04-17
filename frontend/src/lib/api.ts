@@ -154,3 +154,9 @@ export const updateAlertReadStatus = async(alertId: number, unread?: boolean): P
     }
     return apiRequest(`/alerts/${alertId}/read`, undefined, 'PATCH')
 }
+// getLabels
+// apiRequest proxy purpose built for list labels endpoint
+export const getLabels = async(params?: {[key:string]:string}): Promise<Response> => {
+    const paramStr = await paramStrConstruct(params)
+    return apiRequest(`/labels${paramStr}`, undefined, 'GET')
+}

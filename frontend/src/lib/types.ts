@@ -141,6 +141,26 @@ export class NewAlert {
 export type Alert = 	{
     id: number,
     name: string,
+    color: string|null,
+    user: number,
+    createdAt: string,
+    updatedAt: string,
+}
+
+export class NewLabel {
+    name: string;
+    color: string|null;
+    user: number|null;
+    constructor(name?: string, color?: string | null, user?: number|null) {
+        this.name = name ?? ""
+        this.color = color ?? "#1d4ed8" 
+        this.user = user ?? null
+    }
+}
+
+export type Label = 	{
+    id: number,
+    name: string,
     description: string|null,
     type: AlertType,
     user: number,
