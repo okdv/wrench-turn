@@ -86,8 +86,8 @@ func TestMain(m *testing.M) {
 	r.Post("/alerts/edit", authController.Verify(alertController.EditAlert))
 	r.Delete("/alerts/{id:[0-9]+}", authController.Verify(alertController.DeleteAlert))
 	// label routes
-	r.Get("/labels", authController.Verify(labelController.ListLabels))
-	r.Get("/labels/{id:[0-9]+}", authController.Verify(labelController.GetLabel))
+	r.Get("/labels", labelController.ListLabels)
+	r.Get("/labels/{id:[0-9]+}", labelController.GetLabel)
 	r.Post("/labels/create", authController.Verify(labelController.CreateLabel))
 	r.Post("/labels/edit", authController.Verify(labelController.EditLabel))
 	r.Delete("/labels/{id:[0-9]+}", authController.Verify(labelController.DeleteLabel))
@@ -493,7 +493,6 @@ func TestListJobs(t *testing.T) {
 func TestListLabels(t *testing.T) {
 	// get from api
 	req = httptest.NewRequest("GET", "/labels", nil)
-	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	// error if unexpected HTTP status
@@ -568,7 +567,6 @@ func TestGetAndEditJob(t *testing.T) {
 func TestGetAndEditLabel(t *testing.T) {
 	// get from api
 	req = httptest.NewRequest("GET", "/labels/"+strconv.FormatInt(createdLabel.ID, 10), nil)
-	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
