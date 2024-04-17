@@ -88,12 +88,12 @@ func (jc *LabelController) CreateLabel(w http.ResponseWriter, r *http.Request, c
 		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
-	// set newLabel.user is nil, set to current user
-	if newLabel.User == nil {
+	// set newLabel.user is nil and user is not an admin, default label user to them, only admins can create unowned labels
+	if newLabel.User == nil && !c.Is_admin {
 		newLabel.User = &c.ID
 	}
 	// if newLabel user is not requesting user, check if admin
-	if newLabel.User != &c.ID && c.Is_admin == false {
+	if newLabel.User != &c.ID && !c.Is_admin {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to create labels for other users")
 		return
@@ -129,8 +129,9 @@ func (jc *LabelController) EditLabel(w http.ResponseWriter, r *http.Request, c *
 		fmt.Fprintf(w, "Invalid request body: %v", err)
 		return
 	}
+
 	// if requesting users id doesnt match user id in request body, and they are not an admin, throw error
-	if (c.ID != label.User) && (c.Is_admin != true) {
+	if ((label.User == nil) || (c.ID != *label.User)) && !c.Is_admin {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to edit labels of other users")
 		return
@@ -167,7 +168,7 @@ func (jc *LabelController) DeleteLabel(w http.ResponseWriter, r *http.Request, c
 	}
 	// if admin not admin, only allow deleting users own labels
 	var userId *int64 = nil
-	if c.Is_admin != true {
+	if !c.Is_admin {
 		userId = &c.ID
 	}
 	// call delete label

@@ -95,7 +95,7 @@ func (jc *JobController) CreateJob(w http.ResponseWriter, r *http.Request, c *mo
 		newJob.User = &c.ID
 	}
 	// if newJob user is not requesting user, check if admin
-	if newJob.User != &c.ID && c.Is_admin == false {
+	if newJob.User != &c.ID && !c.Is_admin {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to create jobs for other users")
 		return
@@ -132,7 +132,7 @@ func (jc *JobController) EditJob(w http.ResponseWriter, r *http.Request, c *mode
 		return
 	}
 	// if requesting users id doesnt match user id in request body, and they are not an admin, throw error
-	if (c.ID != job.User) && (c.Is_admin != true) {
+	if (c.ID != job.User) && !c.Is_admin {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to edit jobs of other users")
 		return
@@ -169,7 +169,7 @@ func (jc *JobController) DeleteJob(w http.ResponseWriter, r *http.Request, c *mo
 	}
 	// if admin, call DeleteJob service, otherwise call DeleteUsersJob to only allow job deletion for requesting users jobs
 	var userId *int64 = nil
-	if c.Is_admin != true {
+	if !c.Is_admin {
 		userId = &c.ID
 	}
 	err = services.DeleteJob(jobId, userId)
@@ -214,7 +214,7 @@ func (jc *JobController) AssignJobLabel(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	// if requesting users id doesnt match user from job, and they are not an admin, throw error
-	if (c.ID != job.User) && (c.Is_admin != true) {
+	if (c.ID != job.User) && !c.Is_admin {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to assign labels to other users jobs")
 		return
@@ -226,8 +226,8 @@ func (jc *JobController) AssignJobLabel(w http.ResponseWriter, r *http.Request, 
 		fmt.Fprintf(w, "Label ID %d not found: %v", labelId, err)
 		return
 	}
-	// if requesting users id doesnt match user from label, and they are not an admin, throw error
-	if (c.ID != label.User) && (c.Is_admin != true) {
+	// if requesting users id doesnt match user from label, and its not an unowned label, and they are not an admin, throw error
+	if (label.User != nil) && (c.ID != *label.User) && !c.Is_admin {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, "Must be admin to assign other users labels to jobs")
 		return

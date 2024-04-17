@@ -18,7 +18,7 @@ type Label struct {
 	Name  string  `json:"name"`
 	Color *string `json:"color"`
 	// ownership
-	User int64 `json:"user"`
+	User *int64 `json:"user"`
 	// times
 	Created_at time.Time `json:"createdAt"`
 	Updated_at time.Time `json:"updatedAt"`

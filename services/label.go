@@ -17,11 +17,6 @@ func GetLabel(labelId int64) (*models.Label, error) {
 // CreateLabel
 // Takes newLabel as arg, passes to db query, calls GetLabel, returns Label
 func CreateLabel(newLabel models.NewLabel) (*models.Label, error) {
-	// set default values
-	if newLabel.Color == nil {
-		defaultColor := "blue"
-		newLabel.Color = &defaultColor
-	}
 	// pass to db query, return new Labels id
 	labelId, err := db.CreateLabel(newLabel)
 	if err != nil || labelId == nil {

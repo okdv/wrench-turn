@@ -414,9 +414,11 @@ func TestCreateJob(t *testing.T) {
 // TestCreateLabel
 // Tests createing a label with user created by TestCreateUser
 func TestCreateLabel(t *testing.T) {
+	defaultColor := "ff0000"
 	// setuop new test label
 	newLabel := &models.NewLabel{
-		Name: "wrench-turn go test label",
+		Name:  "wrench-turn go test label",
+		Color: &defaultColor,
 	}
 	// convert to json
 	jsonData, err := json.Marshal(newLabel)
@@ -586,7 +588,7 @@ func TestGetAndEditLabel(t *testing.T) {
 	}
 	log.Print("Successfully retrieved test label")
 	// change label description
-	testColor := "red"
+	testColor := "0400ff"
 	fetchedLabel.Color = &testColor
 	// convert to json
 	jsonData, err := json.Marshal(fetchedLabel)
