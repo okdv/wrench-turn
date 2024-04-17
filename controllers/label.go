@@ -20,7 +20,7 @@ func NewLabelController() *LabelController {
 
 // GetLabel
 // Retrieves id param, calls GetLabel services, returns Label
-func (jc *LabelController) GetLabel(w http.ResponseWriter, r *http.Request, c *models.Claims) {
+func (jc *LabelController) GetLabel(w http.ResponseWriter, r *http.Request) {
 	// get label id from url params, parse into int
 	labelId, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
@@ -33,12 +33,6 @@ func (jc *LabelController) GetLabel(w http.ResponseWriter, r *http.Request, c *m
 	if err != nil || label == nil {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Label not found: %v", err)
-		return
-	}
-	// if retrieved alert user is not requesting user, check if admin
-	if label.User != c.ID && c.Is_admin == false {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprint(w, "Must be admin to get labels for other users")
 		return
 	}
 	// covnert to JSON response
@@ -56,23 +50,13 @@ func (jc *LabelController) GetLabel(w http.ResponseWriter, r *http.Request, c *m
 
 // ListLabels
 // Retrieves any URL query params, calls ListLabels service, returns Label list
-func (jc *LabelController) ListLabels(w http.ResponseWriter, r *http.Request, c *models.Claims) {
+func (jc *LabelController) ListLabels(w http.ResponseWriter, r *http.Request) {
 	var labels []*models.Label
 	// get URL query params
 	userId := r.URL.Query().Get("user")
 	jobId := r.URL.Query().Get("job")
 	searchStr := r.URL.Query().Get("q")
 	sort := r.URL.Query().Get("sort")
-	// set user is nil, set to current user
-	if len(userId) == 0 {
-		userId = strconv.FormatInt(c.ID, 10)
-	}
-	// if user is not requesting user, check if admin
-	if userId != strconv.FormatInt(c.ID, 10) && c.Is_admin == false {
-		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprint(w, "Must be admin to list labels for other users")
-		return
-	}
 	// call ListLabels service
 	labels, err := services.ListLabels(&userId, &jobId, &searchStr, &sort)
 	if err != nil {
