@@ -353,14 +353,14 @@ func DeleteJob(jobId int64, userId *int64) error {
 
 // ListJobs
 // Take filters as args, return Job list
-func ListJobs(userId *string, vehicleId *string, isTemplate *string, searchStr *string, sort *string) ([]*models.Job, error) {
+func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *string, searchStr *string, sort *string) ([]*models.Job, error) {
 	var joins []string
 	var wheres []string
 	var likes []Like
 	// establish default sort if not provided
 	var orderBy = "j.updated_at DESC"
 	// establish basic query
-	q := "SELECT * FROM job AS j"
+	q := "SELECT j.ID, j.Name, j.Description, j.Instructions, j.Is_template, j.Is_complete, j.Vehicle, j.User, j.Origin_job, j.Repeats, j.Odo_interval, j.Time_interval, j.Time_interval_unit, j.Due_date, j.Completed_at, j.Created_at, j.Updated_at FROM job AS j"
 	// if userId provided, add where to query
 	if userId != nil && len(*userId) > 0 {
 		wheres = append(wheres, "j.user="+*userId)
@@ -372,6 +372,11 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, searchStr *
 	// if isTemplate provided, add where to query
 	if isTemplate != nil && len(*isTemplate) > 0 {
 		wheres = append(wheres, "j.is_template="+*isTemplate)
+	}
+	// if label ID provided join by labelId where jobId is present
+	if labelId != nil && len(*labelId) > 0 {
+		joins = append(joins, "JOIN job_label AS jl ON j.id = jl.job")
+		wheres = append(wheres, "jl.label="+*labelId)
 	}
 	// if search string provided, construct likes to query username, description cols
 	if searchStr != nil && len(*searchStr) > 0 {

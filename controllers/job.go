@@ -56,10 +56,11 @@ func (jc *JobController) ListJobs(w http.ResponseWriter, r *http.Request) {
 	userId := r.URL.Query().Get("user")
 	vehicleId := r.URL.Query().Get("vehicle")
 	isTemplate := r.URL.Query().Get("template")
+	labelId := r.URL.Query().Get("label")
 	searchStr := r.URL.Query().Get("q")
 	sort := r.URL.Query().Get("sort")
 	// call ListJobs service
-	jobs, err := services.ListJobs(&userId, &vehicleId, &isTemplate, &searchStr, &sort)
+	jobs, err := services.ListJobs(&userId, &vehicleId, &isTemplate, &labelId, &searchStr, &sort)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to retrieve any jobs: %v", err)
