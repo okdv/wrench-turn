@@ -46,8 +46,8 @@ func EditLabel(editedLabel models.Label) (*models.Label, error) {
 
 // ListLabels
 // Takes URL query params as args, passes to ListLabels query, returns Label list
-func ListLabels(userId *string, searchStr *string, sort *string) ([]*models.Label, error) {
-	users, err := db.ListLabels(userId, searchStr, sort)
+func ListLabels(userId *string, jobId *string, searchStr *string, sort *string) ([]*models.Label, error) {
+	users, err := db.ListLabels(userId, jobId, searchStr, sort)
 	return users, err
 }
 

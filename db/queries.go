@@ -1214,17 +1214,22 @@ func DeleteLabel(labelId int64, userId *int64) error {
 
 // ListLabels
 // Take filters as args, return Label list
-func ListLabels(userId *string, searchStr *string, sort *string) ([]*models.Label, error) {
+func ListLabels(userId *string, jobId *string, searchStr *string, sort *string) ([]*models.Label, error) {
 	var joins []string
 	var wheres []string
 	var likes []Like
 	// establish default sort if not provided
 	var orderBy = "l.updated_at DESC"
 	// establish basic query
-	q := "SELECT * FROM label AS l"
+	q := "SELECT l.id, l.name, l.color, l.user, l.created_at, l.updated_at FROM label AS l"
 	// if userId provided, add where to query
 	if userId != nil && len(*userId) > 0 {
 		wheres = append(wheres, "l.user="+*userId)
+	}
+	// if job ID provided join by jobID where vehicleID is present
+	if jobId != nil && len(*jobId) > 0 {
+		joins = append(joins, "JOIN job_label AS jl ON l.id = jl.label")
+		wheres = append(wheres, "jl.job="+*jobId)
 	}
 	// if search string provided, construct likes to query username, description cols
 	if searchStr != nil && len(*searchStr) > 0 {
@@ -1264,6 +1269,7 @@ func ListLabels(userId *string, searchStr *string, sort *string) ([]*models.Labe
 	defer rows.Close()
 	// create list of Label
 	labels := make([]*models.Label, 0)
+
 	// loop through returned rows
 	for rows.Next() {
 		// attribute to Label

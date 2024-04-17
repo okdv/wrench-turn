@@ -60,6 +60,7 @@ func (jc *LabelController) ListLabels(w http.ResponseWriter, r *http.Request, c 
 	var labels []*models.Label
 	// get URL query params
 	userId := r.URL.Query().Get("user")
+	jobId := r.URL.Query().Get("job")
 	searchStr := r.URL.Query().Get("q")
 	sort := r.URL.Query().Get("sort")
 	// set user is nil, set to current user
@@ -73,7 +74,7 @@ func (jc *LabelController) ListLabels(w http.ResponseWriter, r *http.Request, c 
 		return
 	}
 	// call ListLabels service
-	labels, err := services.ListLabels(&userId, &searchStr, &sort)
+	labels, err := services.ListLabels(&userId, &jobId, &searchStr, &sort)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Unable to retrieve any labels: %v", err)
