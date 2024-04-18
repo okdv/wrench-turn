@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"log"
+	"strconv"
 
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
@@ -58,6 +59,9 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, isComplete 
 // DeleteJob
 // Takes job id as arg, passes to DeleteJob query
 func DeleteJob(jobId int64, userId *int64) error {
+	// init values
+	// TODO make some more consistency on data types at different app layers, i was pretty sloppy with this...
+	jobIdStr := strconv.FormatInt(jobId, 10)
 	// get jobs tasks
 	tasks, err := ListTasks(jobId, nil, nil, nil)
 	if err != nil {
@@ -69,6 +73,21 @@ func DeleteJob(jobId int64, userId *int64) error {
 		err = DeleteTask(jobId, nil)
 		if err != nil {
 			log.Printf("Could not delete jobs tasks: %v", err)
+		}
+	}
+	// get jobs alerts
+	alerts, err := ListAlerts(nil, nil, &jobIdStr, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		log.Printf("Could not get jobs tasks: %v", err)
+	}
+	// if there are alerts, delete them
+	if len(alerts) > 0 {
+		// loop through alerts
+		for i := 0; i < len(alerts); i++ {
+			err = DeleteAlert(alerts[i].ID, userId)
+			if err != nil {
+				log.Printf("Could not delete job alert ID %d: %v", alerts[i].ID, err)
+			}
 		}
 	}
 	// delete job

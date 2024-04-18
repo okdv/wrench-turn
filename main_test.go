@@ -774,14 +774,24 @@ func TestCreateAlert(t *testing.T) {
 	if err := json.NewDecoder(w.Body).Decode(&createdAlert); err != nil {
 		t.Errorf("Error decoding response body: %v", err)
 	}
+	// create via api
+	req = httptest.NewRequest("POST", "/alerts/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// create another alert to test auto delete on job deletion
 	log.Print("Successfully created alert")
 }
 
-// TestListAlerts
-// Tests getting all alerts
-func TestListAlerts(t *testing.T) {
+// TestGetAlert
+// Tests getting alert
+func TestGetAlert(t *testing.T) {
 	// get from api
-	req = httptest.NewRequest("GET", "/alerts", nil)
+	req = httptest.NewRequest("GET", "/alerts/"+strconv.FormatInt(createdAlert.ID, 10), nil)
 	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -790,13 +800,13 @@ func TestListAlerts(t *testing.T) {
 		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
 	}
 	// error if unable to decode response
-	var alerts *[]models.Alert
-	if err := json.NewDecoder(w.Body).Decode(&alerts); err != nil {
+	var alert *models.Alert
+	if err := json.NewDecoder(w.Body).Decode(&alert); err != nil {
 		t.Errorf("Error decoding response body: %v", err)
 	}
 	// error if no returned alerts
-	if alerts == nil || len(*alerts) == 0 {
-		t.Errorf("No alerts retreived, at least one (test alerts from TestCreateAlert) should exist")
+	if alert == nil {
+		t.Errorf("No alert retreived, at least one (test alerts from TestCreateAlert) should exist")
 	}
 	log.Print("Successfully retrieved alerts")
 }
@@ -956,6 +966,30 @@ func TestListTasks(t *testing.T) {
 		t.Errorf("No tasks should be retreived, should have been deleted by TestDeleteJob")
 	}
 	log.Print("Successfully confirmed tasks were deleted on job deletion")
+}
+
+// TestListAlerts
+// Tests getting all alerts
+func TestListAlerts(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/alerts", nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var alerts *[]models.Alert
+	if err := json.NewDecoder(w.Body).Decode(&alerts); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if any alerts are returned, they should al be deleted by TestDeleteJob
+	if alerts != nil && len(*alerts) > 0 {
+		t.Errorf("No alerts should be retreived, should have been deleted by TestDeleteJob")
+	}
+	log.Print("Successfully confirmed alerts were deleted on job deletion")
 }
 
 // TestDeleteVehicle
