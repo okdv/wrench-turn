@@ -31,12 +31,13 @@ func ConnectDatabase() (*sql.DB, error) {
 // QueryBuilder
 // Take basic parts of SQL query, construct into usable query
 // May need ORM in the future if it gets too complex, but should work fine for basic queries used thus far
-func QueryBuilder(query string, joins *[]string, wheres *[]string, likes *[]Like, sort *string) string {
+func QueryBuilder(query string, joins *[]string, wheres *[]string, likes *[]Like, groupBy *string, sort *string) string {
 	// start with main query (e.g. SELECT ... FROM ... AS ...)
 	var q string = query
 	// start where str to be appended to query after joins, wheres, likes
 	var whereStr string = ""
 	var sortStr string = ""
+	var groupStr string = ""
 	// loop through joins (e.g. JOIN ... AS ... ON), append to query
 	if joins != nil {
 		for _, join := range *joins {
@@ -86,11 +87,16 @@ func QueryBuilder(query string, joins *[]string, wheres *[]string, likes *[]Like
 			whereStr = whereStr + ")"
 		}
 	}
+	// if groupby is set, generate that part of query
+	if groupBy != nil {
+		groupStr = "GROUP BY " + *groupBy
+	}
+	// if sort is set, generate that part of query
 	if sort != nil {
 		sortStr = " ORDER BY " + *sort
 	}
-	// append whereStr to query, add ORDER BY to end to fully construct query
-	q = q + whereStr + sortStr
+	// append statements strings to query
+	q = q + whereStr + groupStr + sortStr
 	// log and return query
 	log.Printf("QueryBuilder: %v", q)
 	return q

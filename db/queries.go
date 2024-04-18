@@ -123,7 +123,7 @@ func ListUsers(jobId *string, vehicleId *string, isAdmin *string, searchStr *str
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -304,7 +304,7 @@ func EditJob(editedJob models.Job) error {
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, editedJob.Name, editedJob.Description, editedJob.Instructions, editedJob.Is_template, editedJob.Repeats, editedJob.Odo_interval, editedJob.Time_interval, editedJob.Time_interval_unit, editedJob.Due_date, editedJob.User, editedJob.ID)
 	if err != nil {
@@ -329,7 +329,7 @@ func DeleteJob(jobId int64, userId *int64) error {
 	if userId != nil {
 		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
 	}
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
@@ -410,7 +410,7 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *st
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -513,7 +513,7 @@ func EditTask(editedTask models.Task, jobId int64) error {
 	wheres = append(wheres, "job=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, editedTask.Name, editedTask.Description, editedTask.Part_name, editedTask.Part_link, editedTask.Due_date, jobId, editedTask.ID)
 	if err != nil {
@@ -543,7 +543,7 @@ func UpdateTaskStatus(jobId int64, taskId int64, status int) error {
 	wheres = append(wheres, "job=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, status, jobId, taskId)
 	if err != nil {
@@ -630,7 +630,7 @@ func ListTasks(jobId int64, isComplete *string, searchStr *string, sort *string)
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
 	log.Printf(query)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
@@ -751,7 +751,7 @@ func ListVehicles(userId *string, jobId *string, searchStr *string, sort *string
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -827,7 +827,7 @@ func EditVehicle(editedVehicle models.Vehicle) error {
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, editedVehicle.Name, editedVehicle.Description, editedVehicle.Type, editedVehicle.Is_metric, editedVehicle.Vin, editedVehicle.Year, editedVehicle.Make, editedVehicle.Model, editedVehicle.Trim, editedVehicle.Odometer, editedVehicle.User, editedVehicle.User, editedVehicle.ID)
 	if err != nil {
@@ -852,7 +852,7 @@ func DeleteVehicle(vehicleId int64, userId *int64) error {
 	if userId != nil {
 		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
 	}
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
@@ -935,7 +935,7 @@ func EditAlert(editedAlert models.Alert) error {
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, editedAlert.Name, editedAlert.Description, editedAlert.Type, editedAlert.User, editedAlert.Vehicle, editedAlert.Job, editedAlert.Task, editedAlert.Is_read, editedAlert.Alert_at, editedAlert.User, editedAlert.ID)
 	if err != nil {
@@ -960,7 +960,7 @@ func DeleteAlert(alertId int64, userId *int64) error {
 	if userId != nil {
 		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
 	}
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
@@ -1051,7 +1051,7 @@ func ListAlerts(userId *string, vehicleId *string, jobId *string, taskId *string
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -1104,7 +1104,7 @@ func UpdatedAlertStatus(alertId int64, userId int64, status int) error {
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, status, userId, alertId)
 	if err != nil {
@@ -1170,7 +1170,7 @@ func EditLabel(editedLabel models.Label) error {
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
 	res, err := DB.Exec(query, editedLabel.Name, editedLabel.Color, editedLabel.User, editedLabel.ID)
 	if err != nil {
@@ -1195,7 +1195,7 @@ func DeleteLabel(labelId int64, userId *int64) error {
 	if userId != nil {
 		wheres = append(wheres, "user="+strconv.FormatInt(*userId, 10))
 	}
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
@@ -1264,7 +1264,7 @@ func ListLabels(userId *string, jobId *string, searchStr *string, sort *string) 
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -1323,7 +1323,7 @@ func UnassignJobLabel(jobId int64, labelId int64) error {
 	q := "DELETE FROM job_label"
 	wheres = append(wheres, "job="+strconv.FormatInt(jobId, 10))
 	wheres = append(wheres, "label="+strconv.FormatInt(labelId, 10))
-	query := QueryBuilder(q, nil, &wheres, nil, nil)
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
