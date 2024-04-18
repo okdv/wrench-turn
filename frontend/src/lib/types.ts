@@ -35,6 +35,7 @@ export type Job = 	{
     vehicle: number|null,
     user: number,
     originJob: number|null,
+    labels: Array<Label> | null
     repeats: number,
     odoInterval: number,
     timeInterval: number,
