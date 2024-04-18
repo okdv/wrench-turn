@@ -1,14 +1,16 @@
 <script lang="ts">
     import { page } from "$app/stores";
 	import TaskForm from "$lib/TaskForm.svelte";
-	import { apiRequest, getTasks } from "$lib/api";
-	import type { Job, Task } from "$lib/types";
+	import { apiRequest, getTasks, getLabels } from "$lib/api";
+	import type { Job, Label, Task } from "$lib/types";
 
     let job: Job | null
     let jobForm: Job
     let tasks: Array<Task> = []
     let edit = false
     let editTaskIdx: number | null = null 
+    let labels: Array<Label> = []
+    let addLabelValue: string = 'select-one' // will be select-one or index of label to add in labels
 
     const toggleEdit = async() => {
         if (!job) {
@@ -83,6 +85,51 @@
         tasks = newTasks
     }
 
+    const handleAddLabel = async() => {
+        if (job === null) {
+            alert("Job not found, please refresh and try again")
+            return 
+        }
+        if (addLabelValue === 'select-one') {
+            alert("Select a label before saving")
+            return 
+        }
+        const addedLabel = labels[Number(addLabelValue)]
+        const res = await apiRequest(`/jobs/${job.id}/assignLabel/${addedLabel.id}`, undefined, 'POST', true)
+        if (!res.ok) {
+            const msg = await res.text() 
+            alert(`Unable to get add label, please try again: \r\n${msg}`)
+            return
+        }
+        const newJob = job 
+        if (newJob.labels === null) {
+            newJob.labels = []
+        }
+        newJob.labels = [addedLabel, ...newJob.labels]
+        job = newJob
+        addLabelValue = 'select-one'
+    }
+
+    const handleDeleteLabel = async(i: number, id: number) => {
+        if (job === null) {
+            alert("Job not found, please refresh and try again")
+            return 
+        }
+        const res = await apiRequest(`/jobs/${job.id}/assignLabel/${id}?unassign=true`, undefined, 'POST', true)
+        if (!res.ok) {
+            const msg = await res.text() 
+            alert(`Unable to get remove label, please try again: \r\n${msg}`)
+            return
+        }
+        const newJob = job 
+        if (newJob.labels === null) {
+            alert("Something went wrong, please try again")
+            return
+        }
+        newJob.labels.splice(i, 1)
+        job = newJob
+    }
+
     const init = async() => {
         // get job
         let res = await apiRequest(`/jobs/${$page.params.id}`)
@@ -112,6 +159,15 @@
         }
         // update global tasks
         tasks = await res.json()
+        // get labels for job
+        res = await getLabels()
+        // error if non200 response
+        if (!res.ok) {
+            const msg = await res.text() 
+            alert(`Unable to get labels, please try again: \r\n${msg}`)
+            return
+        }
+        labels = await res.json()
     }
     init()
 </script>
@@ -121,14 +177,36 @@
         <br />
         <input name="edit-job-name" id="edit-job-name" bind:value={jobForm.name} />
     {:else}
-        <h1>{!job ? "..." : job.name}</h1>
+        <h1 class="inline-block">{!job ? "..." : job.name}</h1>
+    {/if}
+    {#if job && job.labels !== null}
+        <div class="inline-block">
+            {#if edit}
+                <div class="inline-block">
+                    <select bind:value={addLabelValue}>
+                        <option value="select-one" selected disabled>Select label</option>
+                        {#each labels as label, i}
+                            <option value={i}>{label.name}</option>
+                        {/each}
+                    </select>
+                    <button on:click={handleAddLabel}>Save</button>
+                </div>
+            {/if}
+            {#each job.labels as label, i}
+                <div class="inline-block p-1 mr-1" style="background-color: {label.color}">
+                    <span>{label.name}</span>
+                    {#if edit}
+                        <button on:click={() => handleDeleteLabel(i, label.id)}><i class="fa-solid fa-x border border-black bg-slate-300 p-1"></i></button>
+                    {/if}
+                </div>
+            {/each}
+        </div>
     {/if}
     {#if edit}
         <textbox contenteditable name="edit-job-description" id="edit-job-description" bind:textContent={jobForm.description} />
     {:else}
         <p>{!job ? "..." : (job.description ?? "")}</p>
     {/if}
-    <p>{!job ? "..." : (job.description ?? "")}</p>
     <div>
         <h2>Instructions</h2>
         {#if edit}
