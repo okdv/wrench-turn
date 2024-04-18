@@ -383,7 +383,7 @@ func DeleteJob(jobId int64, userId *int64) error {
 
 // ListJobs
 // Take filters as args, return Job list
-func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *string, searchStr *string, sort *string) ([]*models.Job, error) {
+func ListJobs(userId *string, vehicleId *string, isTemplate *string, isComplete *string, labelId *string, searchStr *string, sort *string) ([]*models.Job, error) {
 	var joins []string
 	var wheres []string
 	var likes []Like
@@ -406,6 +406,10 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *st
 	// if isTemplate provided, add where to query
 	if isTemplate != nil && len(*isTemplate) > 0 {
 		wheres = append(wheres, "job.is_template="+*isTemplate)
+	}
+	// if isComplete provided, add where to query
+	if isComplete != nil && len(*isComplete) > 0 {
+		wheres = append(wheres, "job.is_complete="+*isComplete)
 	}
 	// if label ID provided join by labelId where jobId is present
 	if labelId != nil && len(*labelId) > 0 {

@@ -49,8 +49,8 @@ func EditJob(editedJob models.Job) (*models.Job, error) {
 
 // ListJobs
 // Takes URL query params as args, passes to ListJobs query, returns Job list
-func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *string, searchStr *string, sort *string) ([]*models.Job, error) {
-	users, err := db.ListJobs(userId, vehicleId, isTemplate, labelId, searchStr, sort)
+func ListJobs(userId *string, vehicleId *string, isTemplate *string, isComplete *string, labelId *string, searchStr *string, sort *string) ([]*models.Job, error) {
+	users, err := db.ListJobs(userId, vehicleId, isTemplate, isComplete, labelId, searchStr, sort)
 	return users, err
 }
 
