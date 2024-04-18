@@ -58,17 +58,25 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, isComplete 
 // DeleteJob
 // Takes job id as arg, passes to DeleteJob query
 func DeleteJob(jobId int64, userId *int64) error {
+	// get jobs tasks
+	tasks, err := ListTasks(jobId, nil, nil, nil)
+	if err != nil {
+		log.Printf("Could not get jobs tasks: %v", err)
+	}
+	// if there are tasks, delete them
+	if len(tasks) > 0 {
+		// delete jobs tasks
+		err = DeleteTask(jobId, nil)
+		if err != nil {
+			log.Printf("Could not delete jobs tasks: %v", err)
+		}
+	}
 	// delete job
-	err := db.DeleteJob(jobId, userId)
+	err = db.DeleteJob(jobId, userId)
 	if err != nil {
 		return err
 	}
-	// delete jobs tasks
-	err = DeleteTask(jobId, nil)
-	if err != nil {
-		log.Printf("Could not delete jobs tasks: %v", err)
-	}
-	return err
+	return nil
 }
 
 // AssignJobLabel
