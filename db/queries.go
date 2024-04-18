@@ -442,6 +442,8 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, isComplete 
 			orderBy = "job.created_at DESC"
 		case "last_updated":
 			orderBy = "job.updated_at DESC"
+		case "due_date":
+			orderBy = "job.due_date DESC"
 		default:
 			orderBy = "job.updated_at DESC"
 		}
