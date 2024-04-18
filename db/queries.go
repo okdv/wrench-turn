@@ -239,9 +239,27 @@ func UpdatePassword(username string, password *[]byte) error {
 // GetJob
 // Takes job id, queries it in db, returns Job
 func GetJob(jobId int64) (*models.Job, error) {
+	// init querybuilder data and job and label data
+	var labelIds *string
+	var labelNames *string
+	var labelColors *string
+	var labelCreatedTimes *string
+	var labelUpdatedTimes *string
+	var joins []string
+	var wheres []string
+	groupBy := "job.id"
 	var job models.Job
+	// init query
+	q := "SELECT job.*, GROUP_CONCAT(label.id) AS label_ids, GROUP_CONCAT(label.name) AS label_names, GROUP_CONCAT(label.color) AS label_colors, GROUP_CONCAT(label.created_at) as label_created_times, GROUP_CONCAT(label.updated_at) as label_updated_times FROM job"
+	// join job_label and label to concat
+	joins = append(joins, "LEFT JOIN job_label ON job.id = job_label.job")
+	joins = append(joins, "LEFT JOIN label ON job_label.label = label.id")
+	// add wheres for matching id
+	wheres = append(wheres, "job.id=?")
+	// generate query with QueryBuilder
+	query := QueryBuilder(q, &joins, &wheres, nil, &groupBy, nil)
 	// query db, return any errors
-	err := DB.QueryRow("SELECT * FROM job WHERE id=?", jobId).Scan(
+	err := DB.QueryRow(query, jobId).Scan(
 		&job.ID,
 		&job.Name,
 		&job.Description,
@@ -259,11 +277,23 @@ func GetJob(jobId int64) (*models.Job, error) {
 		&job.Completed_at,
 		&job.Created_at,
 		&job.Updated_at,
+		&labelIds,
+		&labelNames,
+		&labelColors,
+		&labelCreatedTimes,
+		&labelUpdatedTimes,
 	)
 	if err != nil {
 		log.Printf("DB Execution Error: %s", err)
 		return nil, err
 	}
+	// call label processor with cols, return any errors
+	labels, err := LabelProcessor(labelIds, labelNames, labelColors, labelCreatedTimes, labelUpdatedTimes)
+	if err != nil {
+		log.Printf("Error converting labels from cols to slice of objects: %s", err)
+	}
+	// add labels to job
+	job.Labels = labels
 	return &job, nil
 }
 
@@ -357,33 +387,36 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *st
 	var joins []string
 	var wheres []string
 	var likes []Like
+	groupBy := "job.id"
 	// establish default sort if not provided
-	var orderBy = "j.updated_at DESC"
-	// establish basic query
-	q := "SELECT j.ID, j.Name, j.Description, j.Instructions, j.Is_template, j.Is_complete, j.Vehicle, j.User, j.Origin_job, j.Repeats, j.Odo_interval, j.Time_interval, j.Time_interval_unit, j.Due_date, j.Completed_at, j.Created_at, j.Updated_at FROM job AS j"
+	var orderBy = "job.updated_at DESC"
+	// establish basic query, concat labels into 3 cols of coma separated values
+	q := "SELECT job.*, GROUP_CONCAT(label.id) AS label_ids, GROUP_CONCAT(label.name) AS label_names, GROUP_CONCAT(label.color) AS label_colors,  GROUP_CONCAT(label.created_at) as label_created_times, GROUP_CONCAT(label.updated_at) as label_updated_times FROM job"
+	// join job_label and label to concat
+	joins = append(joins, "LEFT JOIN job_label ON job.id = job_label.job")
+	joins = append(joins, "LEFT JOIN label ON job_label.label = label.id")
 	// if userId provided, add where to query
 	if userId != nil && len(*userId) > 0 {
-		wheres = append(wheres, "j.user="+*userId)
+		wheres = append(wheres, "job.user="+*userId)
 	}
 	// if vehicleId provided, add where to query
 	if vehicleId != nil && len(*vehicleId) > 0 {
-		wheres = append(wheres, "j.vehicle="+*vehicleId)
+		wheres = append(wheres, "job.vehicle="+*vehicleId)
 	}
 	// if isTemplate provided, add where to query
 	if isTemplate != nil && len(*isTemplate) > 0 {
-		wheres = append(wheres, "j.is_template="+*isTemplate)
+		wheres = append(wheres, "job.is_template="+*isTemplate)
 	}
 	// if label ID provided join by labelId where jobId is present
 	if labelId != nil && len(*labelId) > 0 {
-		joins = append(joins, "JOIN job_label AS jl ON j.id = jl.job")
-		wheres = append(wheres, "jl.label="+*labelId)
+		wheres = append(wheres, "job_label.label="+*labelId)
 	}
 	// if search string provided, construct likes to query username, description cols
 	if searchStr != nil && len(*searchStr) > 0 {
 		var fields []string
-		fields = append(fields, "j.name")
-		fields = append(fields, "j.description")
-		fields = append(fields, "j.instructions")
+		fields = append(fields, "job.name")
+		fields = append(fields, "job.description")
+		fields = append(fields, "job.instructions")
 		likes = append(likes, Like{
 			Fields: fields,
 			Match:  *searchStr,
@@ -394,23 +427,23 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *st
 	if sort != nil && len(*sort) > 0 {
 		switch *sort {
 		case "az":
-			orderBy = "j.name ASC"
+			orderBy = "job.name ASC"
 		case "za":
-			orderBy = "j.name DESC"
+			orderBy = "job.name DESC"
 		case "completed":
-			orderBy = "j.completed_at DESC"
+			orderBy = "job.completed_at DESC"
 		case "oldest":
-			orderBy = "j.created_at ASC"
+			orderBy = "job.created_at ASC"
 		case "newest":
-			orderBy = "j.created_at DESC"
+			orderBy = "job.created_at DESC"
 		case "last_updated":
-			orderBy = "j.updated_at DESC"
+			orderBy = "job.updated_at DESC"
 		default:
-			orderBy = "j.updated_at DESC"
+			orderBy = "job.updated_at DESC"
 		}
 	}
 	// generate query with QueryBuilder
-	query := QueryBuilder(q, &joins, &wheres, &likes, nil, &orderBy)
+	query := QueryBuilder(q, &joins, &wheres, &likes, &groupBy, &orderBy)
 	// retrieve all matching rows
 	rows, err := DB.Query(query)
 	if err != nil {
@@ -424,6 +457,12 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *st
 	for rows.Next() {
 		// attribute to Job
 		job := models.Job{}
+		// initiate label data for converting concated cols into Label objects slice
+		var labelIds *string
+		var labelNames *string
+		var labelColors *string
+		var labelCreatedTimes *string
+		var labelUpdatedTimes *string
 		err := rows.Scan(
 			&job.ID,
 			&job.Name,
@@ -442,11 +481,23 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, labelId *st
 			&job.Completed_at,
 			&job.Created_at,
 			&job.Updated_at,
+			&labelIds,
+			&labelNames,
+			&labelColors,
+			&labelCreatedTimes,
+			&labelUpdatedTimes,
 		)
 		if err != nil {
 			log.Printf("Error scanning rows retrieved from DB: %s", err)
 			return nil, err
 		}
+		// call label processor with cols, return any errors
+		labels, err := LabelProcessor(labelIds, labelNames, labelColors, labelCreatedTimes, labelUpdatedTimes)
+		if err != nil {
+			log.Printf("Error converting labels from cols to slice of objects: %s", err)
+		}
+		// add labels to job
+		job.Labels = labels
 		// append Job to list of Job
 		jobs = append(jobs, &job)
 	}

@@ -2,9 +2,14 @@ package db
 
 import (
 	"database/sql"
+	"errors"
 	"log"
+	"strconv"
+	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/okdv/wrench-turn/models"
 )
 
 var DB *sql.DB
@@ -89,7 +94,7 @@ func QueryBuilder(query string, joins *[]string, wheres *[]string, likes *[]Like
 	}
 	// if groupby is set, generate that part of query
 	if groupBy != nil {
-		groupStr = "GROUP BY " + *groupBy
+		groupStr = " GROUP BY " + *groupBy
 	}
 	// if sort is set, generate that part of query
 	if sort != nil {
@@ -100,4 +105,59 @@ func QueryBuilder(query string, joins *[]string, wheres *[]string, likes *[]Like
 	// log and return query
 	log.Printf("QueryBuilder: %v", q)
 	return q
+}
+
+// LabelProcessor
+// takes label cols and convert them into slice of objects
+// ideally this is done as service layer but doing in db layer prevents relooping through results
+func LabelProcessor(ids *string, names *string, colors *string, createdTimes *string, updatedTimes *string) ([]models.Label, error) {
+	var labels []models.Label
+	// if any are null, return empty labels slice
+	if ids == nil || names == nil || colors == nil || createdTimes == nil || updatedTimes == nil {
+		return labels, nil
+	}
+	// parse comma delimited values into slices by comma
+	parsedIds := strings.Split(*ids, ",")
+	parsedNames := strings.Split(*names, ",")
+	parsedColors := strings.Split(*colors, ",")
+	parsedCreatedTimes := strings.Split(*createdTimes, ",")
+	parsedUpdatedTimes := strings.Split(*updatedTimes, ",")
+	// throw error if slices are not the same length
+	parsedIdsLen := len(parsedIds)
+	if parsedIdsLen != len(parsedNames) || parsedIdsLen != len(parsedColors) || parsedIdsLen != len(parsedCreatedTimes) || parsedIdsLen != len(parsedUpdatedTimes) {
+		return labels, errors.New("Label columns from db do not have same length, returning empty labels, please try again")
+	}
+	// for loop to minlength and generate a label object for each
+	for i := 0; i < len(parsedIds); i++ {
+		// convert id string into int64
+		id, err := strconv.ParseInt(parsedIds[i], 10, 64)
+		// if error skip iteration
+		if err != nil {
+			log.Printf("Error converting label id string to int64, skipping: %v", err)
+			continue
+		}
+		// parse create and update times
+		layout := "2006-01-02 15:04:05"
+		createdTime, err := time.Parse(layout, parsedCreatedTimes[i])
+		if err != nil {
+			log.Printf("Error converting created time string to time value, skipping: %v", err)
+			continue
+		}
+		updatedTime, err := time.Parse(layout, parsedUpdatedTimes[i])
+		if err != nil {
+			log.Printf("Error converting created time string to time value, skipping: %v", err)
+			continue
+		}
+		// create Label
+		label := &models.Label{
+			ID:         id,
+			Name:       parsedNames[i],
+			Color:      &parsedColors[i],
+			Created_at: createdTime,
+			Updated_at: updatedTime,
+		}
+		// append to labels
+		labels = append(labels, *label)
+	}
+	return labels, nil
 }
