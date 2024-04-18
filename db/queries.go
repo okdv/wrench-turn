@@ -618,8 +618,16 @@ func UpdateTaskStatus(jobId int64, taskId int64, status int) error {
 
 // DeleteTask
 // Take task id as arg, delete Task from task table where id present
-func DeleteTask(jobId int64, taskId int64) error {
-	res, err := DB.Exec("DELETE FROM task WHERE id=? AND job=?", taskId, jobId)
+func DeleteTask(jobId int64, taskId *int64) error {
+	var wheres []string
+	q := "DELETE FROM task"
+	wheres = append(wheres, "job="+strconv.FormatInt(jobId, 10))
+	if taskId != nil {
+		wheres = append(wheres, "id="+strconv.FormatInt(*taskId, 10))
+	}
+	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
+
+	res, err := DB.Exec(query)
 	// throw SQL errors
 	if err != nil {
 		log.Printf("DB Query Error: %s", err)

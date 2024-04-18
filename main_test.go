@@ -72,6 +72,7 @@ func TestMain(m *testing.M) {
 	r.Post("/jobs/{jobId:[0-9]+}/tasks/create", authController.Verify(taskController.CreateTask))
 	r.Post("/jobs/{jobId:[0-9]+}/tasks/edit", authController.Verify(taskController.EditTask))
 	r.Delete("/jobs/{jobId:[0-9]+}/tasks/{taskId:[0-9]+}", authController.Verify(taskController.DeleteTask))
+	r.Delete("/jobs/{jobId:[0-9]+}/tasks", authController.Verify(taskController.DeleteTask))
 	// vehicle routes
 	r.Get("/vehicles", vehicleController.ListVehicles)
 	r.Get("/vehicles/{id:[0-9]+}", vehicleController.GetVehicle)
@@ -642,14 +643,24 @@ func TestCreateTask(t *testing.T) {
 	if err := json.NewDecoder(w.Body).Decode(&createdTask); err != nil {
 		t.Errorf("Error decoding response body: %v", err)
 	}
+	// create second task to test deletion workflow when job is deleted
+	// create via api
+	req = httptest.NewRequest("POST", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusCreated, w.Code)
+	}
 	log.Print("Successfully created task")
 }
 
-// TestListTasks
+// TestGetTask
 // Tests getting all tasks for created job
-func TestListTasks(t *testing.T) {
+func TestGetTask(t *testing.T) {
 	// get from api
-	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks", nil)
+	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks/"+strconv.FormatInt(createdTask.ID, 10), nil)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	// error if unexpected HTTP status
@@ -657,13 +668,13 @@ func TestListTasks(t *testing.T) {
 		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
 	}
 	// error if unable to decode response
-	var jobs *[]models.Job
-	if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
+	var task *models.Job
+	if err := json.NewDecoder(w.Body).Decode(&task); err != nil {
 		t.Errorf("Error decoding response body: %v", err)
 	}
 	// error if no returned users
-	if jobs == nil || len(*jobs) == 0 {
-		t.Errorf("No tasks retreived, at least one (test task from TestCreateTask) should exist")
+	if task == nil {
+		t.Errorf("No task retreived, task (test task from TestCreateTask) should exist")
 	}
 	log.Print("Successfully retrieved tasks")
 }
@@ -922,6 +933,29 @@ func TestDeleteJob(t *testing.T) {
 		log.Printf("Test job ID %d may still exist, delete manually if so", createdJob.ID)
 	}
 	log.Print("Successfully deleted job")
+}
+
+// TestListTasks
+// Tests getting all tasks for created job
+func TestListTasks(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/tasks", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var tasks *[]models.Task
+	if err := json.NewDecoder(w.Body).Decode(&tasks); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if any tasks are returned, they should al be deleted by TestDeleteJob
+	if tasks != nil && len(*tasks) > 0 {
+		t.Errorf("No tasks should be retreived, should have been deleted by TestDeleteJob")
+	}
+	log.Print("Successfully confirmed tasks were deleted on job deletion")
 }
 
 // TestDeleteVehicle

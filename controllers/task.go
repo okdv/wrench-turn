@@ -246,11 +246,20 @@ func (tc *TaskController) DeleteTask(w http.ResponseWriter, r *http.Request, c *
 		return
 	}
 	// get task id from url params, parse into int
-	taskId, err := strconv.ParseInt(chi.URLParam(r, "taskId"), 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "ID must be an integer: %v", err)
-		return
+	var taskId *int64
+	// get param string
+	taskIdParam := chi.URLParam(r, "taskId")
+	// only reset from nil param string is not empty
+	if len(taskIdParam) > 0 {
+		// convert param string to int64
+		taskIdInt, err := strconv.ParseInt(taskIdParam, 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "Task ID must be an integer: %v", err)
+			return
+		}
+		// assign to taskid so its not nil
+		taskId = &taskIdInt
 	}
 	// get Job Data
 	job, err := services.GetJob(jobId)

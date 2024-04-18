@@ -55,7 +55,7 @@ func ListTasks(jobId int64, isComplete *string, searchStr *string, sort *string)
 
 // DeleteTask
 // Takes job id, task id as args, passes to DeleteTask query
-func DeleteTask(jobId int64, taskId int64) error {
+func DeleteTask(jobId int64, taskId *int64) error {
 	err := db.DeleteTask(jobId, taskId)
 	return err
 }

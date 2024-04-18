@@ -57,7 +57,16 @@ func ListJobs(userId *string, vehicleId *string, isTemplate *string, isComplete 
 // DeleteJob
 // Takes job id as arg, passes to DeleteJob query
 func DeleteJob(jobId int64, userId *int64) error {
+	// delete job
 	err := db.DeleteJob(jobId, userId)
+	if err != nil {
+		return err
+	}
+	// delete jobs tasks
+	err = DeleteTask(jobId, nil)
+	if err != nil {
+		return err
+	}
 	return err
 }
 
