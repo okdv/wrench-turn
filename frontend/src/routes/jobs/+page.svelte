@@ -8,6 +8,7 @@
     let searchStr = ''
     let searchUserId = ''
     let searchVehicleId = ''
+    let searchLabelId = ''
     let isTemplateCheck = false
 
     // runs on render
@@ -38,10 +39,13 @@
             params["sort"] = sortStr
         }
         if (searchUserId.length > 0) {
-            params["user"] = searchStr
+            params["user"] = searchUserId
+        }
+        if (searchLabelId.length > 0) {
+            params["label"] = searchLabelId
         }
         if (searchVehicleId.length > 0) {
-            params["vehicle"] = searchStr
+            params["vehicle"] = searchVehicleId
         }
         if (isTemplateCheck) {
             params["template"] = "true"
@@ -64,6 +68,7 @@
     <div class="flex justify-between p-2">
         <input bind:value={searchStr} placeholder="Search..." class="border border-black" />
         <input bind:value={searchUserId} placeholder="User ID..." class="border border-black" />
+        <input bind:value={searchLabelId} placeholder="Label ID..." class="border border-black" />
         <input bind:value={searchVehicleId} placeholder="Vehicle ID..." class="border border-black" />
         <div>
             <input type="checkbox" bind:value={isTemplateCheck} id="is-template-check" name="is-template-check" />
