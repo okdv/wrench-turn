@@ -455,17 +455,7 @@ func TestAssignAndUnassignJobLabel(t *testing.T) {
 		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
 	}
 	log.Print("Successfully assigned label")
-
-	// unassign via api
-	req = httptest.NewRequest("POST", "/jobs/"+strconv.FormatInt(createdJob.ID, 10)+"/assignLabel/"+strconv.FormatInt(createdLabel.ID, 10)+"?unassign=true", nil)
-	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	// error if unexpected HTTP status
-	if w.Code != http.StatusOK {
-		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
-	}
-	log.Print("Successfully unassigned label")
+	// will be unassigned on job delete
 }
 
 // TestListJobs
@@ -491,11 +481,11 @@ func TestListJobs(t *testing.T) {
 	log.Print("Successfully retrieved jobs")
 }
 
-// TestListLabels
-// Tests getting all labels
-func TestListLabels(t *testing.T) {
+// TestGetLabel
+// Tests getting label
+func TestGetLabel(t *testing.T) {
 	// get from api
-	req = httptest.NewRequest("GET", "/labels", nil)
+	req = httptest.NewRequest("GET", "/labels/"+strconv.FormatInt(createdLabel.ID, 10), nil)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	// error if unexpected HTTP status
@@ -503,13 +493,13 @@ func TestListLabels(t *testing.T) {
 		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
 	}
 	// error if unable to decode response
-	var labels *[]models.Label
-	if err := json.NewDecoder(w.Body).Decode(&labels); err != nil {
+	var label *models.Label
+	if err := json.NewDecoder(w.Body).Decode(&label); err != nil {
 		t.Errorf("Error decoding response body: %v", err)
 	}
 	// error if no returned users
-	if labels == nil || len(*labels) == 0 {
-		t.Errorf("No labels retreived, at least one (test labels from TestCreateLabel) should exist")
+	if label == nil {
+		t.Errorf("No label retreived, at least one (test labels from TestCreateLabel) should exist")
 	}
 	log.Print("Successfully retrieved labels")
 }
@@ -894,23 +884,6 @@ func TestDeleteAlert(t *testing.T) {
 	log.Print("Successfully deleted alert")
 }
 
-// TestDeleteLabel
-// Tests deleting the alert created by TestCreateTask
-func TestDeleteLabel(t *testing.T) {
-	// delete via api
-	req = httptest.NewRequest("DELETE", "/labels/"+strconv.FormatInt(createdLabel.ID, 10), nil)
-	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	// error if unexpected http status
-	if w.Code != http.StatusOK {
-		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
-		// if issue deleting label, log that id as it may need to be manually deleted from db
-		log.Printf("Test label ID %d may still exist, delete manually if so", createdLabel.ID)
-	}
-	log.Print("Successfully deleted label")
-}
-
 // TestDeleteTask
 // Tests deleting the task created by TestCreateTask
 func TestDeleteTask(t *testing.T) {
@@ -943,6 +916,63 @@ func TestDeleteJob(t *testing.T) {
 		log.Printf("Test job ID %d may still exist, delete manually if so", createdJob.ID)
 	}
 	log.Print("Successfully deleted job")
+}
+
+// TestListLabels
+// Tests getting all labels
+func TestListLabels(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/labels", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var labels *[]models.Label
+	if err := json.NewDecoder(w.Body).Decode(&labels); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if no returned users
+	if labels == nil || len(*labels) == 0 {
+		t.Errorf("No labels retreived, at least one (test labels from TestCreateLabel) should exist")
+	}
+	log.Print("Successfully retrieved labels")
+	// get from api ofr job only, should be nil
+	req = httptest.NewRequest("GET", "/labels?job="+strconv.FormatInt(createdLabel.ID, 10), nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	if err := json.NewDecoder(w.Body).Decode(&labels); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if no returned users
+	if labels != nil && len(*labels) > 0 {
+		t.Errorf("No labels should have been retreived, it was disassociated from job on TestDeleteJob")
+	}
+	log.Print("Successfully confirmed label was disassociated from job")
+}
+
+// TestDeleteLabel
+// Tests deleting the alert created by TestCreateTask
+func TestDeleteLabel(t *testing.T) {
+	// delete via api
+	req = httptest.NewRequest("DELETE", "/labels/"+strconv.FormatInt(createdLabel.ID, 10), nil)
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected http status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+		// if issue deleting label, log that id as it may need to be manually deleted from db
+		log.Printf("Test label ID %d may still exist, delete manually if so", createdLabel.ID)
+	}
+	log.Print("Successfully deleted label")
 }
 
 // TestListTasks

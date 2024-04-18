@@ -78,7 +78,7 @@ func DeleteJob(jobId int64, userId *int64) error {
 	// get jobs alerts
 	alerts, err := ListAlerts(nil, nil, &jobIdStr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
-		log.Printf("Could not get jobs tasks: %v", err)
+		log.Printf("Could not get jobs alerts: %v", err)
 	}
 	// if there are alerts, delete them
 	if len(alerts) > 0 {
@@ -87,6 +87,21 @@ func DeleteJob(jobId int64, userId *int64) error {
 			err = DeleteAlert(alerts[i].ID, userId)
 			if err != nil {
 				log.Printf("Could not delete job alert ID %d: %v", alerts[i].ID, err)
+			}
+		}
+	}
+	// get jobs labels
+	labels, err := ListLabels(nil, &jobIdStr, nil, nil)
+	if err != nil {
+		log.Printf("Could not get jobs labels: %v", err)
+	}
+	// if there are labels, delete them
+	if len(labels) > 0 {
+		// loop through labels
+		for i := 0; i < len(labels); i++ {
+			_, err = AssignJobLabel(jobId, labels[i].ID, 0)
+			if err != nil {
+				log.Printf("Could not remove job label ID %d: %v", labels[i].ID, err)
 			}
 		}
 	}
