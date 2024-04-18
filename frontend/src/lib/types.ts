@@ -160,15 +160,9 @@ export class NewLabel {
 
 export type Label = 	{
     id: number,
-    name: string,
-    description: string|null,
-    type: AlertType,
-    user: number,
-    vehicle: number|null,
-    job: number|null,
-    task: number|null,
-    isRead: number,
-    readAt: string|null,
+    name: string;
+    color: string|null;
+    user: number|null;
     createdAt: string,
     updatedAt: string,
 }

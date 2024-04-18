@@ -9,6 +9,7 @@
     let searchUserId = ''
     let searchJobId = ''
     let newLabel = new NewLabel()
+    let editLabel: Label | null = null 
 
     // runs on render
     const init = async() => {
@@ -88,6 +89,54 @@
         return 
     }
 
+    // runs on edit label save
+    const handleEditLabel = async(idx: number) => {
+        // check if edit label is null
+        if (editLabel === null) {
+            alert("Something went wrong, refresh and try again")
+            return
+        }
+        // check if name is blank
+        if (editLabel.name.length === 0) {
+            alert("Name cannot be blank!")
+            return 
+        }
+        // update via api 
+        const res = await apiRequest("/labels/edit", editLabel, "POST", true, false)
+        if (!res.ok) {
+            console.log(await res.text())
+            alert("Something went wrong, refresh and try again")
+            return 
+        }
+        const json = await res.json() 
+        const updatedLabels = labels 
+        updatedLabels[idx] = json 
+        labels = updatedLabels
+        editLabel = null
+        return 
+    }
+
+        // runs on delete label
+        const handleDeleteLabel = async(idx: number) => {
+        // check if edit label is null
+        if (editLabel === null) {
+            alert("Something went wrong, refresh and try again")
+            return
+        }
+        // update via api 
+        const res = await apiRequest(`/labels/${editLabel.id}`, null, "DELETE", true, false)
+        if (!res.ok) {
+            console.log(await res.text())
+            alert("Something went wrong, refresh and try again")
+            return 
+        }
+        const updatedLabels = labels 
+        updatedLabels.splice(idx, 1)
+        labels = updatedLabels
+        editLabel = null
+        return 
+    }
+
     init()
 </script>
 <div class="p-2">
@@ -121,8 +170,25 @@
         <p>Looks a little empty, try adding a label <a class="underline text-link" href="/labels/create"><b>here</b></a></p>
     {:else}
         <ul class="p-2">
-            {#each labels as label}
-                <li class="p-2 bg-slate-200 mb-1">{label.name}</li>
+            {#each labels as label, idx}
+                <li class="p-2 bg-slate-200 mb-1 flex justify-between">
+                    {#if editLabel !== null && label.id === editLabel.id}
+                        <input bind:value={editLabel.name} placeholder="Label name..." />
+                        <input bind:value={editLabel.color} type="color" />
+                    {:else}
+                        <h4>{label.name}</h4>
+                        <div class="w-5 h-5" style="background-color:{label.color}"></div>
+                    {/if}
+                    <div>
+                        {#if editLabel !== null && label.id === editLabel.id}
+                            <button on:click={() => handleEditLabel(idx)}><i class="fa-solid fa-check border border-black bg-slate-300 p-1"></i></button>
+                            <button on:click={() => editLabel = null}><i class="fa-solid fa-x border border-black bg-slate-300 p-1"></i></button>
+                            <button on:click={() => handleDeleteLabel(idx)}><i class="fa-solid fa-trash border border-black bg-slate-300 p-1"></i></button>
+                        {:else if editLabel === null}
+                            <button on:click={() => editLabel = label}><i class="fa-solid fa-pencil border border-black bg-slate-300 p-1"></i></button>
+                        {/if}
+                    </div>
+                </li>
             {/each}
         </ul>
     {/if}
