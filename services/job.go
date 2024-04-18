@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"log"
 
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
@@ -65,7 +66,7 @@ func DeleteJob(jobId int64, userId *int64) error {
 	// delete jobs tasks
 	err = DeleteTask(jobId, nil)
 	if err != nil {
-		return err
+		log.Printf("Could not delete jobs tasks: %v", err)
 	}
 	return err
 }
