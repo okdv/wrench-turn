@@ -91,7 +91,16 @@
         <ul class="p-2">
             {#each jobs as job}
                 <a href="/jobs/{job.id}">
-                    <li class="p-2 bg-slate-200 mb-1">{job.name}</li>
+                    <li class="p-2 bg-slate-200 mb-1">
+                        <h3 class="inline-block">{job.name}</h3>
+                        {#if job.labels !== null}
+                            <div class="inline-block">
+                                {#each job.labels as label}
+                                    <div class="p-1 inline-block mr-1" style="background-color: {label.color}"><span>{label.name}</span></div>
+                                {/each}
+                            </div>
+                        {/if}
+                    </li>
                 </a>
             {/each}
         </ul>
