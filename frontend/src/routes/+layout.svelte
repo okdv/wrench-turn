@@ -28,7 +28,7 @@
   </div>
   <slot />
   <div class="text-center">
-    <p class="text-center inline-block p-2 mr-2">Powered by WrenchTurn v0.0.0-alpha</p>
+    <p class="text-center inline-block p-2 mr-2">Powered by WrenchTurn v1.0.0-alpha</p>
     &bull;
     <a href="https://github.com/okdv/wrench-turn" class="inline-block p-2 ml-2 text-link">
       <i class="fa-solid fa-star"></i>
