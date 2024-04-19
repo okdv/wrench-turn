@@ -72,6 +72,7 @@ func main() {
 		envVars := map[string]string{
 			"PUBLIC_FRONTEND_URL": os.Getenv("PUBLIC_FRONTEND_URL"),
 			"PUBLIC_API_URL":      os.Getenv("PUBLIC_API_URL"),
+			"API_VERSION":         "v1.0.0-alpha",
 		}
 		// convert into json response
 		jsonData, err := json.Marshal(envVars)
