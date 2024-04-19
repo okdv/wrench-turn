@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"log"
+	"strconv"
 
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
@@ -54,6 +56,22 @@ func EditVehicle(editedVehicle models.Vehicle) (*models.Vehicle, error) {
 // DeleteVehicle
 // Takes vehicle id as arg, passes to DeleteVehicle query
 func DeleteVehicle(vehicleId int64, userId *int64) error {
-	err := db.DeleteVehicle(vehicleId, userId)
+	vehicleIdStr := strconv.FormatInt(vehicleId, 10)
+	// get vehicles jobs
+	jobs, err := ListJobs(nil, &vehicleIdStr, nil, nil, nil, nil, nil)
+	if err != nil {
+		log.Printf("Could not get vehicles jobs: %v", err)
+	}
+	// if there are jobs, delete them
+	if len(jobs) > 0 {
+		// loop through jobs
+		for i := 0; i < len(jobs); i++ {
+			err = DeleteJob(jobs[i].ID, nil)
+			if err != nil {
+				log.Printf("Could not delete job ID %d: %v", jobs[i].ID, err)
+			}
+		}
+	}
+	err = db.DeleteVehicle(vehicleId, userId)
 	return err
 }

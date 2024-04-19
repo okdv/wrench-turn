@@ -230,7 +230,7 @@ func TestRefresh(t *testing.T) {
 }
 
 // TestGetAndEditUser
-// Tests getting and editing user created by TestCreateJob
+// Tests getting and editing user created by TestCreateUser
 func TestGetAndEditUser(t *testing.T) {
 	// get from api
 	req = httptest.NewRequest("GET", "/users/"+createdUser.Username, nil)
@@ -410,6 +410,16 @@ func TestCreateJob(t *testing.T) {
 		t.Errorf("Error decoding response body: %v", err)
 	}
 	log.Print("Successfully created job")
+	// create a second job, this one to be auto deleted on vehicle deletion
+	req = httptest.NewRequest("POST", "/jobs/create", bytes.NewReader(jsonData))
+	req.Header.Add("Authorization", "Bearer "+jwtCookie.Value)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusCreated {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	log.Print("Successfully created job")
 }
 
 // TestCreateLabel
@@ -458,11 +468,11 @@ func TestAssignAndUnassignJobLabel(t *testing.T) {
 	// will be unassigned on job delete
 }
 
-// TestListJobs
-// Tests getting all jobs
-func TestListJobs(t *testing.T) {
+// TestGetJob
+// Tests getting job
+func TestGetJob(t *testing.T) {
 	// get from api
-	req = httptest.NewRequest("GET", "/jobs", nil)
+	req = httptest.NewRequest("GET", "/jobs/"+strconv.FormatInt(createdJob.ID, 10), nil)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	// error if unexpected HTTP status
@@ -470,13 +480,13 @@ func TestListJobs(t *testing.T) {
 		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
 	}
 	// error if unable to decode response
-	var jobs *[]models.Job
-	if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
+	var job *models.Job
+	if err := json.NewDecoder(w.Body).Decode(&job); err != nil {
 		t.Errorf("Error decoding response body: %v", err)
 	}
 	// error if no returned users
-	if jobs == nil || len(*jobs) == 0 {
-		t.Errorf("No jobs retreived, at least one (test jobs from TestCreateJob) should exist")
+	if job == nil {
+		t.Errorf("No job retreived, at least one (test jobs from TestCreateJob) should exist")
 	}
 	log.Print("Successfully retrieved jobs")
 }
@@ -1037,6 +1047,29 @@ func TestDeleteVehicle(t *testing.T) {
 		log.Printf("Test vehicle ID %d may still exist, delete manually if so", createdVehicle.ID)
 	}
 	log.Print("Successfully deleted vehicle")
+}
+
+// TestListJobs
+// Tests getting all jobs
+func TestListJobs(t *testing.T) {
+	// get from api
+	req = httptest.NewRequest("GET", "/jobs?vehicle="+strconv.FormatInt(createdVehicle.ID, 10), nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	// error if unexpected HTTP status
+	if w.Code != http.StatusOK {
+		t.Errorf("Expted status code %d, got %d", http.StatusOK, w.Code)
+	}
+	// error if unable to decode response
+	var jobs *[]models.Job
+	if err := json.NewDecoder(w.Body).Decode(&jobs); err != nil {
+		t.Errorf("Error decoding response body: %v", err)
+	}
+	// error if jobs are returned
+	if jobs != nil && len(*jobs) > 0 {
+		t.Errorf("No jobs should be retreived")
+	}
+	log.Print("Successfully confirmed jobs were deleted on TestDeleteVehicle")
 }
 
 // TestDeleteUser
