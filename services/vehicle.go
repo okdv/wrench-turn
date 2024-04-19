@@ -72,6 +72,21 @@ func DeleteVehicle(vehicleId int64, userId *int64) error {
 			}
 		}
 	}
+	// get vehicles alerts
+	alerts, err := ListAlerts(nil, &vehicleIdStr, nil, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		log.Printf("Could not get vehicles alerts: %v", err)
+	}
+	// if there are alerts, delete them
+	if len(alerts) > 0 {
+		// loop through alerts
+		for i := 0; i < len(alerts); i++ {
+			err = DeleteAlert(alerts[i].ID, userId)
+			if err != nil {
+				log.Printf("Could not delete vehicle alert ID %d: %v", alerts[i].ID, err)
+			}
+		}
+	}
 	err = db.DeleteVehicle(vehicleId, userId)
 	return err
 }
