@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"log"
+	"strconv"
 
 	"github.com/okdv/wrench-turn/db"
 	"github.com/okdv/wrench-turn/models"
@@ -49,6 +51,22 @@ func ListLabels(userId *string, jobId *string, searchStr *string, sort *string) 
 // DeleteLabel
 // Takes label id as arg, passes to DeleteLabel query
 func DeleteLabel(labelId int64, userId *int64) error {
-	err := db.DeleteLabel(labelId, userId)
+	labelIdStr := strconv.FormatInt(labelId, 10)
+	// get labels jobs
+	jobs, err := ListJobs(nil, nil, nil, nil, &labelIdStr, nil, nil)
+	if err != nil {
+		log.Printf("Could not get jobs labels: %v", err)
+	}
+	// if there are labels, delete them
+	if len(jobs) > 0 {
+		// loop through labels
+		for i := 0; i < len(jobs); i++ {
+			_, err = AssignJobLabel(jobs[i].ID, labelId, 0)
+			if err != nil {
+				log.Printf("Could not remove label from job ID %d: %v", jobs[i].ID, err)
+			}
+		}
+	}
+	err = db.DeleteLabel(labelId, userId)
 	return err
 }
