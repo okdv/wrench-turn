@@ -7,7 +7,7 @@ import (
 type NewAlert struct {
 	Name        *string    `json:"name"`
 	Description *string    `json:"description"`
-	Type        string     `json:"type"`
+	Type        string     `json:"type"` // notification or reminder
 	User        *int64     `json:"user"`
 	Vehicle     *int64     `json:"vehicle"`
 	Job         *int64     `json:"job"`
