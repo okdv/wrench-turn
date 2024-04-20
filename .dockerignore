@@ -5,7 +5,6 @@ wrench-turn
 *.dll
 *.so
 *.dylib
-tmp/
 
 # Test binary, built with `go test -c`
 *.test
@@ -19,12 +18,11 @@ tmp/
 # Go workspace file
 go.work
 
-# Private env
-.env*
-!.env.development
-
-# docker volumes 
-./data
-
-# databases
-*.db
+# SvelteKit 
+.DS_Store
+node_modules
+/frontend/build
+/frontend/.svelte-kit
+/frontend/package
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*

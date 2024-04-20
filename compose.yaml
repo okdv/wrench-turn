@@ -7,6 +7,9 @@ services:
     build: 
       context: . 
       dockerfile: backend.Dockerfile 
+    volumes:
+      - ./sqlite.db:/app/sqlite.db
+      - ./.env.production:/app/.env.production
     ports:
      - 8080:8080
 
@@ -17,5 +20,7 @@ services:
     build: 
       context: .
       dockerfile: frontend.Dockerfile 
+    volumes: 
+      - ./.env.production:/app/.env.production
     ports: 
-      - 8888:80
+      - 5173:80

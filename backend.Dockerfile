@@ -1,15 +1,25 @@
-FROM golang:1.20-alpine AS builder 
+FROM golang:1.21.5-alpine3.18 AS build 
 
-WORKDIR /api 
+ARG GO_ENV=production
+ENV GO_ENV=production
+
+RUN apk update && apk add --no-cache gcc musl-dev
+
+WORKDIR /app 
 
 COPY go.* .
 RUN go mod download 
-COPY *.go .
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./app ./main.go
+
+COPY . .
+RUN CGO_ENABLED=1 GOOS=linux go build -o wrench-turn .
 
 FROM alpine:latest  
 
-WORKDIR /api 
-COPY --from=builder /api/app .
+ARG GO_ENV=production
+ENV GO_ENV=production
+
+WORKDIR /app 
+COPY --from=build /app/wrench-turn .
+
 EXPOSE 8080 
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["./wrench-turn"]
