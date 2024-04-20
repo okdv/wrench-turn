@@ -25,3 +25,6 @@ go.work
 
 # docker volumes 
 ./data
+
+# databases
+*.db

@@ -31,8 +31,30 @@ func main() {
 		log.Fatalf("Unable to load .env file: %v", err)
 	}
 
+	// check if db file exists
+	dbFilename := os.Getenv("DB_FILENAME")
+	if _, err := os.Stat(dbFilename); os.IsNotExist(err) {
+		// if not, create it
+		log.Printf("database file %v does not exist, running db setup... ", dbFilename)
+		file, err := os.Create(dbFilename)
+		if err != nil {
+			log.Fatal("failed to create database file")
+		}
+		file.Close()
+		// read sql from schema
+		sqlBytes, err := os.ReadFile("schema.sql")
+		if err != nil {
+			log.Fatalf("failed to read schema file: %v", err)
+		}
+		err = db.CreateDatabase(dbFilename, string(sqlBytes))
+		if err != nil {
+			log.Fatalf("failed to create database: %v", err)
+		}
+		log.Print("Will attempt to connect to db now...")
+	}
+
 	// connect to db
-	_, err = db.ConnectDatabase()
+	_, err = db.ConnectDatabase(dbFilename)
 	if err != nil {
 		log.Fatal("Unable to connect to SQLite Database")
 		return

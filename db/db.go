@@ -22,10 +22,28 @@ type Like struct {
 	Or     bool     `json:"or"`
 }
 
+// CreateDatabase
+func CreateDatabase(filename string, sqlString string) error {
+	// open new db connection
+	db, err := sql.Open("sqlite3", "./"+filename)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// execute sql
+	_, err = db.Exec(sqlString)
+	if err != nil {
+		return err
+	}
+	log.Print("Databse created successfully")
+	return nil
+}
+
 // ConnectDatabase
 // Use sqlite pkg to establish a connection
-func ConnectDatabase() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./sqlite.db")
+func ConnectDatabase(filename string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", "./"+filename)
 	if err != nil {
 		return nil, err
 	}

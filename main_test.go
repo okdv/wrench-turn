@@ -30,8 +30,29 @@ var testPassword string
 var jwtCookie *http.Cookie
 
 func TestMain(m *testing.M) {
+	// check if db file exists
+	dbFilename := "test.db"
+	if _, err := os.Stat(dbFilename); os.IsNotExist(err) {
+		// if not, create it
+		log.Printf("database file %v does not exist, running db setup... ", dbFilename)
+		file, err := os.Create(dbFilename)
+		if err != nil {
+			log.Fatal("failed to create database file")
+		}
+		file.Close()
+		// read sql from schema
+		sqlBytes, err := os.ReadFile("schema.sql")
+		if err != nil {
+			log.Fatalf("failed to read schema file: %v", err)
+		}
+		err = db.CreateDatabase(dbFilename, string(sqlBytes))
+		if err != nil {
+			log.Fatalf("failed to create database: %v", err)
+		}
+		log.Print("Will attempt to connect to db now...")
+	}
 	// test db connection
-	DB, err := db.ConnectDatabase()
+	DB, err := db.ConnectDatabase(dbFilename)
 	if err != nil {
 		panic("Unable to open database: " + err.Error())
 	}
@@ -92,11 +113,18 @@ func TestMain(m *testing.M) {
 	r.Post("/labels/create", authController.Verify(labelController.CreateLabel))
 	r.Post("/labels/edit", authController.Verify(labelController.EditLabel))
 	r.Delete("/labels/{id:[0-9]+}", authController.Verify(labelController.DeleteLabel))
-	// after all tests, close db
-	defer DB.Close()
 	// run tests
 	exitCode := m.Run()
-	// cleanup
+	// Close the database connection explicitly
+	if DB != nil {
+		if err := DB.Close(); err != nil {
+			panic(err)
+		}
+	}
+	// Cleanup after all tests
+	if err := os.Remove(dbFilename); err != nil {
+		panic(err)
+	}
 	os.Exit(exitCode)
 
 }
@@ -430,6 +458,7 @@ func TestCreateLabel(t *testing.T) {
 	newLabel := &models.NewLabel{
 		Name:  "wrench-turn go test label",
 		Color: &defaultColor,
+		User:  &createdUser.ID,
 	}
 	// convert to json
 	jsonData, err := json.Marshal(newLabel)
