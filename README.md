@@ -1,22 +1,27 @@
 # Wrench Turn
+Self-hosted, flexible maintenance tracker for your cars, bikes, and everything in between
 
-## Running
+**WARNING**: This project is under active development in an alpha state, effectively an MVP. Would not recommend using yet unless you plan to contribute in some way, otherwise a beta release will be coming soon. This will be where everyday self hosters would likely benefit from the service. 
 
-If necessary
+## Running (Production)
 
+Clone repo, open in terminal 
+`git clone https://github.com/okdv/wrench-turn.git`
 `cd wrench-turn`
 
-### Docker (Production)
+### Docker
 
 Using Docker Compose 
 
 `sudo docker-compose up` 
 
-### Local
+### Bare metal
 
 Must have Golang and Node installed 
 
-Build backend
+#### Backend
+
+Build with go
 
 `go build`
 
@@ -32,11 +37,7 @@ Install
 
 `npm install`
 
-If you simply want to use Node to render the frontend for development, run
-
-`npm run dev`
-
-#### Building frontend locally (Production)
+#### Frontend (static build)
 
 Build frontend (creates static app with svelte-static-adapter)
 
@@ -44,11 +45,23 @@ Build frontend (creates static app with svelte-static-adapter)
 
 Run the generated build dir (/wrench-turn/frontend/build) with the desired web server, such as NGINX
 
+#### Frontend (svelte preview)
+
+If you simply want to use Node to render the frontend for development, run
+
+`npm run preview`
+
 ## Contributing
 
-Pull requests should be made on the `develop` branch 
-
-git pre-commit hook will attempt to run `go build`, `go test` successfully before committing 
+1) Fork repository 
+2) Clone your fork
+    - `git clone https://github.com/your-username/wrench-turn.git && cd wrench-turn`
+3) Create a branch for what you're working on at that time
+    - `git checkout -b super-cool-feature`
+4) Commit and push
+    - `git add . && git commit -m "feat: super awesome feature #420" && git push origin super-cool-feature`
+    - **Note:** git pre-commit hook will attempt to run `go build`, `go test` successfully before committing 
+5) Open a PR requesting to merge your feature branch with our develop branch, and wait for review
 
 Please follow this git commit message format
 
