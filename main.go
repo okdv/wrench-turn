@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// check if db file exists
-	dbFilename := os.Getenv("DB_FILENAME")
+	dbFilename := "./data/" + os.Getenv("DB_FILENAME")
 	if _, err := os.Stat(dbFilename); os.IsNotExist(err) {
 		// if not, create it
 		log.Printf("database file %v does not exist, running db setup... ", dbFilename)

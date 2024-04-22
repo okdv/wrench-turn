@@ -6,6 +6,7 @@ wrench-turn
 *.so
 *.dylib
 tmp/
+releases/
 
 # Test binary, built with `go test -c`
 *.test
@@ -28,3 +29,4 @@ go.work
 
 # databases
 *.db
+!example.db

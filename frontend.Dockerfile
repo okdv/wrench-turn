@@ -6,6 +6,8 @@ ENV NODE_ENV=production
 WORKDIR /app 
 
 COPY ./frontend /app/
+# Copy backend env to frontend for easier deployment
+COPY ./.env.production ./
 
 RUN npm ci 
 RUN npm run build 
@@ -13,10 +15,10 @@ RUN npm run build
 FROM nginx:1.25-alpine 
 
 WORKDIR /etc/nginx
-COPY --from=build /app/nginx.conf .
+COPY --from=build /app/nginx.conf ./
 
 WORKDIR /usr/share/nginx/html 
 RUN rm -rf ./* 
-COPY --from=build /app/build .
+COPY --from=build /app/build ./
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
