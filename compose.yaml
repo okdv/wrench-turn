@@ -8,7 +8,7 @@ services:
       context: . 
       dockerfile: backend.Dockerfile 
     volumes:
-      - ./data:/app/sqlite.db
+      - ./data:/app/data
       - ./.env.production:/app/.env.production
     ports:
      - 8080:8080

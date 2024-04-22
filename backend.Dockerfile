@@ -20,6 +20,8 @@ ENV GO_ENV=production
 
 WORKDIR /app 
 COPY --from=build /app/wrench-turn ./
+# create data dir
+RUN mkdir /app/data
 
 EXPOSE 8080 
 ENTRYPOINT ["./wrench-turn"]
