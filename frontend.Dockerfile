@@ -6,6 +6,8 @@ ENV NODE_ENV=production
 WORKDIR /app 
 
 COPY ./frontend /app/
+# Copy backend env to frontend for easier deployment
+COPY ./.env.production ./
 
 RUN npm ci 
 RUN npm run build 
