@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { apiRequest, getToken } from "$lib/api";
-	import { NewJob } from "$lib/types";
+	import { apiRequest, getJWTData, getToken, getVehicles } from "$lib/api";
+	import { NewJob, type Vehicle } from "$lib/types";
 
     let job = new NewJob()
+    let vehicles: Array<Vehicle> = []
     let isTemplate = false 
+    let selectedVehicleId: string = "select-one"
     let repeats = false 
     let timeIntervalUnit: "select-one" | "month" | "day" | "year" | "week" = "select-one"
     
@@ -12,10 +14,23 @@
         const jwt = await getToken()
         if (jwt === null) {
             window.location.href = "/login"
+            return
         }
+        const jwtData = await getJWTData(jwt)
+        const vehiclesRes = await getVehicles({
+            'user': jwtData.id
+        })
+        if (!vehiclesRes.ok) {
+            alert(`Could not get your vehicles, please refresh and try again: ${await vehiclesRes.text()}`)
+            return 
+        }
+        vehicles = await vehiclesRes.json()
     }
     // runs on submit btn, create via api
     const handleSubmit = async() => {
+        if (selectedVehicleId !== "select-one") {
+            job.vehicle = Number(selectedVehicleId)
+        }
         const res = await apiRequest("/jobs/create", job, 'POST', true)
         if (res.ok) {
             const json = await res.json() 
@@ -55,12 +70,21 @@
             <textarea name="new-job-instructions" id="new-job-instructions" placeholder="Undo 12mm oil drain plug, drain oil, replace plug gasket and reinstall, remove and replace oil filter, refill oil" bind:value={job.instructions} class="border border-black" />
         </div>
         <div>
-            <input name="new-vehicle-is-template" id="new-vehicle-is-template" type="checkbox" bind:value={isTemplate} class="border border-black" on:change={updateIsTemplate} />
-            <label for="new-vehicle-is-template" class="select-none">Is template?</label>
+            <label for="new-job-vehicle">Attach vehicle</label>
+            <select id="new-job-vehicle" name="new-job-vehicle" bind:value={selectedVehicleId}>
+                <option value="select-one" disabled selected>Select one</option>
+                {#each vehicles as vehicle}
+                    <option value={vehicle.id}>{vehicle.name}</option>
+                {/each}
+            </select>
         </div>
         <div>
-            <input name="new-vehicle-repeats" id="new-vehicle-repeats" type="checkbox" bind:value={repeats} class="border border-black" on:change={updateRepeats} />
-            <label for="new-vehicle-repeats" class="select-none">Repeats?</label>
+            <input name="new-job-is-template" id="new-job-is-template" type="checkbox" bind:value={isTemplate} class="border border-black" on:change={updateIsTemplate} />
+            <label for="new-job-is-template" class="select-none">Is template?</label>
+        </div>
+        <div>
+            <input name="new-job-repeats" id="new-job-repeats" type="checkbox" bind:value={repeats} class="border border-black" on:change={updateRepeats} />
+            <label for="new-job-repeats" class="select-none">Repeats?</label>
         </div>
         <div>
             <label for="new-job-odo-interval">Odometer interval</label>

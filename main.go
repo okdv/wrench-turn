@@ -14,6 +14,7 @@ import (
 
 	"github.com/okdv/wrench-turn/controllers"
 	"github.com/okdv/wrench-turn/db"
+	"github.com/okdv/wrench-turn/version"
 )
 
 func main() {
@@ -86,7 +87,7 @@ func main() {
 	// establish api routes
 	// general routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Welcome to the WrenchTurn API")
+		fmt.Fprintf(w, "Welcome to the WrenchTurn API %v", version.Version)
 		return
 	})
 	r.Get("/env", func(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +95,8 @@ func main() {
 		envVars := map[string]string{
 			"PUBLIC_FRONTEND_URL": os.Getenv("PUBLIC_FRONTEND_URL"),
 			"PUBLIC_API_URL":      os.Getenv("PUBLIC_API_URL"),
-			"API_VERSION":         "v1.0.0-alpha",
+			"NODE_ENV":            os.Getenv("NODE_ENV"),
+			"API_VERSION":         version.Version,
 		}
 		// convert into json response
 		jsonData, err := json.Marshal(envVars)
@@ -155,6 +157,7 @@ func main() {
 	r.Post("/labels/edit", authController.Verify(labelController.EditLabel))
 	r.Delete("/labels/{id:[0-9]+}", authController.Verify(labelController.DeleteLabel))
 	// serve router
+	log.Printf("Starting WrenchTurn server %v", version.Version)
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("PUBLIC_API_PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PUBLIC_API_PORT"), r))
 }

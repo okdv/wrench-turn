@@ -5,71 +5,37 @@ Self-hosted, flexible maintenance tracker for your cars, bikes, and everything i
 
 ## Branches 
 `develop`: The latest, unstable, branch. Where all commits are made to, and where all contributing branches are branched from. Though tested first, likelihood of broken things is fairly good. 
+
 `main`: stable channel/branch. should pretty much always match the latest release branch 
-`vX.X.X[-stage]`: particular version/release, e.g. v1.0.0-alpha, v.4.2.0
+
+`release-vX.X.X[-stage]`: particular version/release, e.g. v1.0.0-alpha, v.4.2.0
 
 ## Running (Production)
+1) Clone repo, open in terminal: `git clone https://github.com/okdv/wrench-turn.git && cd wrench-turn`
+2) Create `.env.production` file from `.env.development`: `cp .env.development .env.production`
+3) Edit `.env.production` accordingly, need to change the below, but other vars may need editing depending on implementation:
+    - `NODE_ENV=production`
+    - `JWT_KEY=YOUR_CUSTOM_SECRET_KEY_DONT_COMMIT_OR_LEAVE_DEFAULT`
+### Docker (recommended)
+4) Edit `compose.yaml` accordingly, mainly port mapping. `.env.production` should match port mapping in `compose.yaml`.
+5) Build and run `sudo docker-compose up` 
 
-Clone repo, open in terminal 
-`git clone https://github.com/okdv/wrench-turn.git`
-`cd wrench-turn`
-
-### Docker
-
-Using Docker Compose 
-
-`sudo docker-compose up` 
-
-### Bare metal
-
-Must have Golang and Node installed 
-
+### Bare metal (not recommended)
 #### Backend
+4) [Install go](https://go.dev/dl/)
+**Note:** check the image version used in [backend.Dockerfile](https://github.com/okdv/wrench-turn/blob/develop/backend.Dockerfile) if unsure which version to use. Usually assume latest stable version. 
+5) Run `go build`, may need to adjust commands for your particular OS
+6) Run generated build, `./wrench-turn`, `./wrench-turn.exe`, etc.
 
-Build with go
+#### Frontend
+7) [Install node](https://nodejs.org/en/download) or [nvm](https://github.com/nvm-sh/nvm)
+**Note:** check the image version used in [frontend.Dockerfile](https://github.com/okdv/wrench-turn/blob/develop/frontend.Dockerfile) if unsure which version to use. Usually assume latest stable version. 
+8) open frontend `cd frontend`
+9) Install node modules `npm i`
+10) Run node build `npm run build`
 
-`go build`
+##### Static (recommended)
+11) Run the generated build dir (/wrench-turn/frontend/build) with the desired web server, such as NGINX
 
-Start backend
-
-`./wrench-turn`
-
-Open frontend directory
-
-`cd frontend`
-
-Install
-
-`npm install`
-
-#### Frontend (static build)
-
-Build frontend (creates static app with svelte-static-adapter)
-
-`npm run build`
-
-Run the generated build dir (/wrench-turn/frontend/build) with the desired web server, such as NGINX
-
-#### Frontend (svelte preview)
-
-If you simply want to use Node to render the frontend for development, run
-
-`npm run preview`
-
-## Contributing
-
-1) Fork repository 
-2) Clone your fork
-    - `git clone https://github.com/your-username/wrench-turn.git && cd wrench-turn`
-3) Create a branch off of the develop branch for what you're working on at that time
-    - `git checkout -b super-cool-feature develop`
-4) Commit and push
-    - `git add . && git commit -m "feat: super awesome feature #420" && git push origin super-cool-feature`
-    - **Note:** git pre-commit hook will attempt to run `go build`, `go test` successfully before committing 
-5) Open a PR requesting to merge your feature branch with our develop branch, and wait for review
-
-Please follow this git commit message format
-
-`<type: chore, feat, fix>: <description> <rel issue number>`
-
-e.g. `chore: cleaning up comments`, `feat: adding calendar feature #13`, `fix: home button deletes all data #16`
+##### Using Node (not recommended) 
+11) Run `npm run preview`
