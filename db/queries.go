@@ -329,14 +329,14 @@ func CreateJob(newJob models.NewJob) (*int64, error) {
 func EditJob(editedJob models.Job) error {
 	var wheres []string
 	// setup query
-	q := "UPDATE job SET name=?, description=?, instructions=?, is_template=?, repeats=?, odo_interval=?, time_interval=?, time_interval_unit=?, due_date=?, updated_at=CURRENT_TIMESTAMP"
+	q := "UPDATE job SET name=?, description=?, instructions=?, is_template=?, vehicle=?, repeats=?, odo_interval=?, time_interval=?, time_interval_unit=?, due_date=?, updated_at=CURRENT_TIMESTAMP"
 	// add required wheres (ensures the job id and user id in the db match that of request body)
 	wheres = append(wheres, "user=?")
 	wheres = append(wheres, "id=?")
 	// get generated query
 	query := QueryBuilder(q, nil, &wheres, nil, nil, nil)
 	// exec query
-	res, err := DB.Exec(query, editedJob.Name, editedJob.Description, editedJob.Instructions, editedJob.Is_template, editedJob.Repeats, editedJob.Odo_interval, editedJob.Time_interval, editedJob.Time_interval_unit, editedJob.Due_date, editedJob.User, editedJob.ID)
+	res, err := DB.Exec(query, editedJob.Name, editedJob.Description, editedJob.Instructions, editedJob.Is_template, editedJob.Vehicle, editedJob.Repeats, editedJob.Odo_interval, editedJob.Time_interval, editedJob.Time_interval_unit, editedJob.Due_date, editedJob.User, editedJob.ID)
 	if err != nil {
 		log.Printf("DB Execution Error: %s", err)
 		return err
