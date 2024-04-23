@@ -1,6 +1,11 @@
 # Contributing
 This will cover everything you need to know to get started on contributing.
 
+## Finding an issue
+As with most projects, it's best to start with simple, non-urgent issues that provide an easy introduction into the project. This is no different. See [our good first issues](https://github.com/okdv/wrench-turn/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) for a nice place to start. There is something for everyone, rather frontend (Svelte, Typescript), backend (Go, SQLite), or infrastructure (Docker, Github Actions, NGINX).
+
+Once you have some experience, and feel comfortable taking lead on features or more complex issues. Check out our Beta roadmap [here](https://github.com/users/okdv/projects/7/views/1), these are a fantastic place to start, especially if you'd like to become a maintainer.
+
 ## Run the app in development mode
 Eventually will containerize dev environment, but haven't yet. So for now, contributors should run this bare metal or within their own containers. 
 
