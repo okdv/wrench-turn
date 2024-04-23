@@ -22,6 +22,7 @@ Eventually will containerize dev environment, but haven't yet. So for now, contr
 
 ## Commit messages 
 Please follow this git commit message format: `<type: chore, feat, fix>: <description> <rel issue number>`
+
 e.g. `chore: cleaning up comments`, `feat: adding calendar feature #13`, `fix: home button deletes all data #16`
 
 ## How to contribute
