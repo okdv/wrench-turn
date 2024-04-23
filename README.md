@@ -8,7 +8,7 @@ Self-hosted, flexible maintenance tracker for your cars, bikes, and everything i
 
 `main`: stable channel/branch. should pretty much always match the latest release branch 
 
-`vX.X.X[-stage]`: particular version/release, e.g. v1.0.0-alpha, v.4.2.0
+`release-vX.X.X[-stage]`: particular version/release, e.g. v1.0.0-alpha, v.4.2.0
 
 ## Running (Production)
 1) Clone repo, open in terminal: `git clone https://github.com/okdv/wrench-turn.git && cd wrench-turn`
