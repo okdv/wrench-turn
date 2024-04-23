@@ -204,11 +204,18 @@
         </div>
         <textbox contenteditable name="edit-job-description" id="edit-job-description" bind:textContent={jobForm.description} />
         <textbox contenteditable name="edit-job-instructions" id="edit-job-instructions" bind:textContent={jobForm.instructions} />
-    {:else if job}
+        <div>
+            <label for="edit-job-status">Status</label>
+            <select id="edit-job-status" name="edit-job-status" bind:value={jobForm.isComplete}>
+                <option value={0}>Incomplete</option>
+                <option value={1}>Complete</option>
+            </select>
+        </div>    {:else if job}
         <h1 class="inline-block">{job.name ?? ""}</h1>
         <p><b>Vehicle: </b><a href="/vehicles/{job.vehicle}">{job.vehicle}</a></p>
         <p><b>Description: </b>{job.description ?? ""}</p>
         <p><b>Instructions: </b>{job.instructions ?? ""}</p>
+        <p><b>Status: </b>{job.isComplete === 1 ? "Completed" : "Incomplete"}</p>
     {/if}
     {#if job && job.labels !== null}
         <div class="inline-block">
