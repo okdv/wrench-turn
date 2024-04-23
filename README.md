@@ -11,45 +11,31 @@ Self-hosted, flexible maintenance tracker for your cars, bikes, and everything i
 `vX.X.X[-stage]`: particular version/release, e.g. v1.0.0-alpha, v.4.2.0
 
 ## Running (Production)
-Clone repo, open in terminal 
+1) Clone repo, open in terminal: `git clone https://github.com/okdv/wrench-turn.git && cd wrench-turn`
+2) Create `.env.production` file from `.env.development`: `cp .env.development .env.production`
+3) Edit `.env.production` accordingly, need to change the below, but other vars may need editing depending on implementation:
+    - `NODE_ENV=production`
+    - `JWT_KEY=YOUR_CUSTOM_SECRET_KEY_DONT_COMMIT_OR_LEAVE_DEFAULT`
+### Docker (recommended)
+4) Edit `compose.yaml` accordingly, mainly port mapping. `.env.production` should match port mapping in `compose.yaml`.
+5) Build and run `sudo docker-compose up` 
 
-`git clone https://github.com/okdv/wrench-turn.git`
-
-`cd wrench-turn`
-
-### Docker
-Using Docker Compose 
-
-`sudo docker-compose up` 
-
-### Bare metal
-Must have Golang and Node installed 
-
+### Bare metal (not recommended)
 #### Backend
-Build with go
+4) [Install go](https://go.dev/dl/)
+**Note:** check the image version used in [backend.Dockerfile](https://github.com/okdv/wrench-turn/blob/develop/backend.Dockerfile) if unsure which version to use. Usually assume latest stable version. 
+5) Run `go build`, may need to adjust commands for your particular OS
+6) Run generated build, `./wrench-turn`, `./wrench-turn.exe`, etc.
 
-`go build`
+#### Frontend
+7) [Install node](https://nodejs.org/en/download) or [nvm](https://github.com/nvm-sh/nvm)
+**Note:** check the image version used in [frontend.Dockerfile](https://github.com/okdv/wrench-turn/blob/develop/frontend.Dockerfile) if unsure which version to use. Usually assume latest stable version. 
+8) open frontend `cd frontend`
+9) Install node modules `npm i`
+10) Run node build `npm run build`
 
-Start backend
+##### Static (recommended)
+11) Run the generated build dir (/wrench-turn/frontend/build) with the desired web server, such as NGINX
 
-`./wrench-turn`
-
-Open frontend directory
-
-`cd frontend`
-
-Install
-
-`npm install`
-
-#### Frontend (static build)
-Build frontend (creates static app with svelte-static-adapter)
-
-`npm run build`
-
-Run the generated build dir (/wrench-turn/frontend/build) with the desired web server, such as NGINX
-
-#### Frontend (svelte preview)
-If you simply want to use Node to render the frontend, run
-
-`npm run preview`
+##### Using Node (not recommended) 
+11) Run `npm run preview`
