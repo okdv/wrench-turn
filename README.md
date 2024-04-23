@@ -52,24 +52,6 @@ Run the generated build dir (/wrench-turn/frontend/build) with the desired web s
 
 #### Frontend (svelte preview)
 
-If you simply want to use Node to render the frontend for development, run
+If you simply want to use Node to render the frontend, run
 
 `npm run preview`
-
-## Contributing
-
-1) Fork repository 
-2) Clone your fork
-    - `git clone https://github.com/your-username/wrench-turn.git && cd wrench-turn`
-3) Create a branch off of the develop branch for what you're working on at that time
-    - `git checkout -b super-cool-feature develop`
-4) Commit and push
-    - `git add . && git commit -m "feat: super awesome feature #420" && git push origin super-cool-feature`
-    - **Note:** git pre-commit hook will attempt to run `go build`, `go test` successfully before committing 
-5) Open a PR requesting to merge your feature branch with our develop branch, and wait for review
-
-Please follow this git commit message format
-
-`<type: chore, feat, fix>: <description> <rel issue number>`
-
-e.g. `chore: cleaning up comments`, `feat: adding calendar feature #13`, `fix: home button deletes all data #16`
