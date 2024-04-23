@@ -204,11 +204,11 @@
         </div>
         <textbox contenteditable name="edit-job-description" id="edit-job-description" bind:textContent={jobForm.description} />
         <textbox contenteditable name="edit-job-instructions" id="edit-job-instructions" bind:textContent={jobForm.instructions} />
-    {:else}
-        <h1 class="inline-block">{!job ? "..." : job.name}</h1>
-        <p><b>Vehicle: </b><a href="/vehicles/{job?.vehicle}">{job?.vehicle}</a></p>
-        <p><b>Description: </b>{!job ? "..." : (job.description ?? "")}</p>
-        <p><b>Instructions: </b>{!job ? "..." : (job.instructions ?? "")}</p>
+    {:else if job}
+        <h1 class="inline-block">{job.name ?? ""}</h1>
+        <p><b>Vehicle: </b><a href="/vehicles/{job.vehicle}">{job.vehicle}</a></p>
+        <p><b>Description: </b>{job.description ?? ""}</p>
+        <p><b>Instructions: </b>{job.instructions ?? ""}</p>
     {/if}
     {#if job && job.labels !== null}
         <div class="inline-block">
