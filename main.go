@@ -14,6 +14,7 @@ import (
 
 	"github.com/okdv/wrench-turn/controllers"
 	"github.com/okdv/wrench-turn/db"
+	"github.com/okdv/wrench-turn/version"
 )
 
 func main() {
@@ -94,7 +95,8 @@ func main() {
 		envVars := map[string]string{
 			"PUBLIC_FRONTEND_URL": os.Getenv("PUBLIC_FRONTEND_URL"),
 			"PUBLIC_API_URL":      os.Getenv("PUBLIC_API_URL"),
-			"API_VERSION":         "v1.0.0-alpha",
+			"NODE_ENV":            os.Getenv("NODE_ENV"),
+			"API_VERSION":         version.Version,
 		}
 		// convert into json response
 		jsonData, err := json.Marshal(envVars)
