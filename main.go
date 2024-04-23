@@ -87,7 +87,7 @@ func main() {
 	// establish api routes
 	// general routes
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "Welcome to the WrenchTurn API")
+		fmt.Fprintf(w, "Welcome to the WrenchTurn API %v", version.Version)
 		return
 	})
 	r.Get("/env", func(w http.ResponseWriter, r *http.Request) {
@@ -157,6 +157,7 @@ func main() {
 	r.Post("/labels/edit", authController.Verify(labelController.EditLabel))
 	r.Delete("/labels/{id:[0-9]+}", authController.Verify(labelController.DeleteLabel))
 	// serve router
+	log.Printf("Starting WrenchTurn server %v", version.Version)
 	log.Printf("WrenchTurn server listening on port %v", os.Getenv("PUBLIC_API_PORT"))
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PUBLIC_API_PORT"), r))
 }
