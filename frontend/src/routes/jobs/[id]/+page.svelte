@@ -1,12 +1,13 @@
 <script lang="ts">
     import { page } from "$app/stores";
 	import TaskForm from "$lib/TaskForm.svelte";
-	import { apiRequest, getTasks, getLabels } from "$lib/api";
-	import type { Job, Label, Task } from "$lib/types";
+	import { apiRequest, getTasks, getLabels, getVehicles, getToken, getJWTData } from "$lib/api";
+	import type { Job, Label, Task, Vehicle } from "$lib/types";
 
     let job: Job | null
     let jobForm: Job
     let tasks: Array<Task> = []
+    let vehicles: Array<Vehicle> = []
     let edit = false
     let editTaskIdx: number | null = null 
     let labels: Array<Label> = []
@@ -131,6 +132,13 @@
     }
 
     const init = async() => {
+        // get jwt data
+        const jwt = await getToken()
+        if (jwt === null) {
+            window.location.href = "/login"
+            return
+        }
+        const jwtData = await getJWTData(jwt)
         // get job
         let res = await apiRequest(`/jobs/${$page.params.id}`)
         // error if non200 response
@@ -149,6 +157,15 @@
             alert("Job ID not available, please refresh and try again")
             return
         }
+        // get vehicles
+        res = await getVehicles({
+            'user': jwtData.id
+        })
+        if (!res.ok) {
+            alert(`Could not get your vehicles, please refresh and try again: ${await res.text()}`)
+            return 
+        }
+        vehicles = await res.json()
         // get tasks for job
         res = await getTasks(job.id)
         // error if non200 response
@@ -176,8 +193,18 @@
         <button on:click={handleDelete}>Delete</button>
         <br />
         <input name="edit-job-name" id="edit-job-name" bind:value={jobForm.name} />
+        <div>
+            <label for="edit-job-vehicle">Vehicle</label>
+            <select id="edit-job-vehicle" name="edit-job-vehicle" bind:value={jobForm.vehicle}>
+                <option value={null}>None</option>
+                {#each vehicles as vehicle}
+                    <option value={vehicle.id}>{vehicle.name}</option>
+                {/each}
+            </select>
+        </div>
     {:else}
         <h1 class="inline-block">{!job ? "..." : job.name}</h1>
+        <p><b>Vehicle: </b><a href="/vehicles/{job?.vehicle}">{job?.vehicle}</a></p>
     {/if}
     {#if job && job.labels !== null}
         <div class="inline-block">
