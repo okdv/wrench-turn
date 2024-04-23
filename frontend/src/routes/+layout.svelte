@@ -1,11 +1,19 @@
 <script lang="ts">
-	import { verifyToken } from "$lib/api";
+	import { getEnv, verifyToken } from "$lib/api";
     import "../app.css";
 
     let isLoggedIn = false
+    let version = ''
 
     const init = async() => {
       isLoggedIn = await verifyToken()
+      const res = await getEnv() 
+      if (!res.ok) {
+        alert("Unable to get env data from API")
+        return 
+      }
+      const envJson = await res.json() 
+      version = envJson["API_VERSION"]
     }
     init()
   </script>
@@ -28,7 +36,7 @@
   </div>
   <slot />
   <div class="text-center">
-    <p class="text-center inline-block p-2 mr-2">Powered by WrenchTurn v1.0.0-alpha</p>
+    <p class="text-center inline-block p-2 mr-2">Powered by WrenchTurn {version}</p>
     &bull;
     <a href="https://github.com/okdv/wrench-turn" class="inline-block p-2 ml-2 text-link">
       <i class="fa-solid fa-star"></i>
