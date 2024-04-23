@@ -202,9 +202,13 @@
                 {/each}
             </select>
         </div>
+        <textbox contenteditable name="edit-job-description" id="edit-job-description" bind:textContent={jobForm.description} />
+        <textbox contenteditable name="edit-job-instructions" id="edit-job-instructions" bind:textContent={jobForm.instructions} />
     {:else}
         <h1 class="inline-block">{!job ? "..." : job.name}</h1>
         <p><b>Vehicle: </b><a href="/vehicles/{job?.vehicle}">{job?.vehicle}</a></p>
+        <p><b>Description: </b>{!job ? "..." : (job.description ?? "")}</p>
+        <p><b>Instructions: </b>{!job ? "..." : (job.instructions ?? "")}</p>
     {/if}
     {#if job && job.labels !== null}
         <div class="inline-block">
@@ -229,19 +233,6 @@
             {/each}
         </div>
     {/if}
-    {#if edit}
-        <textbox contenteditable name="edit-job-description" id="edit-job-description" bind:textContent={jobForm.description} />
-    {:else}
-        <p>{!job ? "..." : (job.description ?? "")}</p>
-    {/if}
-    <div>
-        <h2>Instructions</h2>
-        {#if edit}
-            <textbox contenteditable name="edit-job-instructions" id="edit-job-instructions" bind:textContent={jobForm.instructions} />
-        {:else}
-            <p>{!job ? "..." : (job.instructions ?? "")}</p>
-        {/if}
-    </div>
     <div>
         <button on:click|preventDefault={toggleEdit}>{edit ? "Cancel" : "Edit"}</button>
         {#if edit}
