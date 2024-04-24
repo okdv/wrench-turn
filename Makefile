@@ -1,7 +1,7 @@
 OUT := wrench-turn 
 PKG := github.com/okdv/wrench-turn 
 # get version from git data
-VERSION := v1.2.2-alpha
+VERSION := v1.2.3-alpha
 
 .PHONY: build 
 
@@ -19,5 +19,5 @@ build:
 	git add frontend/package.json version/version.go 
 	git commit -m "Bump version to ${VERSION} for release" 
 	git tag -a ${VERSION} -m "${VERSION}"
-	git push --tags
 	git push origin release-${VERSION}
+	git push --tags
