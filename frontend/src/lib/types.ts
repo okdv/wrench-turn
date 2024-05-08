@@ -1,3 +1,4 @@
+import { apiRequest } from "$lib/api"
 export class NewJob {
     name: string|null
     description: string|null
@@ -61,18 +62,52 @@ export class NewTask {
     }
 }
 
-export type Task = 	{
-    id: number,
-    name: string,
-    description: string|null,
-    isComplete: number,
-    job: number,
-    partName: string|null,
-    partLink: string|null,
-    dueDate: string|null,
-    completedAt: string|null,
-    createdAt: string,
-    updatedAt: string,
+// Class for handling Tasks, new and existing
+export class Task {
+    id?: number
+    name: string
+    description: string|null
+    isComplete: number
+    job: number
+    partName: string|null
+    partLink: string|null
+    dueDate: string|null
+    readonly completedAt?: string|null
+    readonly createdAt?: string
+    readonly updatedAt?: string
+    constructor(task: Task) {
+        this.id = task.id
+        this.job = task.job
+        this.name = task.name ?? ""
+        this.description = task.description ?? null 
+        this.isComplete = task.isComplete ?? 0
+        this.partName = task.partName ?? null 
+        this.partLink = task.partLink ?? null
+        this.dueDate = task.dueDate ?? null
+        this.completedAt = task.completedAt
+        this.createdAt = task.createdAt
+        this.updatedAt = task.updatedAt
+    }
+    // method for marking task complete via api
+    async markComplete(): Promise<void> {
+        try {
+            console.log(this)
+            // throw error if it has no id
+            if (!this.id) {
+                throw new Error("This task does not have an ID and likely needs to be created before it can be updated")
+            }
+            // update via api
+            const res = await apiRequest(`/jobs/${this.job}/tasks/${this.id}/complete?incomplete=${this.isComplete === 1}`, undefined, "PATCH", true)
+            if (!res.ok) {
+                throw new Error(`Unable to mark task complete: HTTP ${res.status} - ${res.text()}`)
+            }
+            // update locally instead of calling new data from api
+            this.isComplete = 1
+        } catch (error) {
+            console.error("Error marking task complete: ", error)
+            throw error
+        }
+    }
 }
 
 export class NewVehicle {

@@ -2,7 +2,7 @@
     import { page } from "$app/stores";
 	import TaskForm from "$lib/TaskForm.svelte";
 	import { apiRequest, getTasks, getLabels, getVehicles, getToken, getJWTData } from "$lib/api";
-	import type { Job, Label, Task, Vehicle } from "$lib/types";
+	import { Task, type Job, type Label, type Vehicle } from "$lib/types";
 
     let job: Job | null
     let jobForm: Job
@@ -67,22 +67,12 @@
         tasks = newTasks
     }
 
+    // call mark task complete method and update tasks array on toggle
     const handleToggleTask = async(task: Task, i: number) => {
-        const res = await apiRequest(`/jobs/${task.job}/tasks/${task.id}/complete?incomplete=${task.isComplete === 1}`, undefined, "PATCH", true)
-        if (!res.ok) {
-            if (res.status === 404) {
-                alert("Task not found")
-                return 
-            }
-            const msg = await res.text() 
-            alert(`Unable to get toggle task, please try again: \r\n${msg}`)
-            return
-        }
-        let newTasks = tasks 
-        newTasks[i] = {
-            ...task,
-            isComplete: task.isComplete === 1 ? 0 : 1
-        }
+        const newTasks = tasks
+        task = new Task(task)
+        await task.markComplete()
+        newTasks[i] = task
         tasks = newTasks
     }
 
