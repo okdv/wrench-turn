@@ -88,10 +88,53 @@ export class Task {
         this.createdAt = task.createdAt
         this.updatedAt = task.updatedAt
     }
+    // method for creating task via api
+    async create(): Promise<Task> {
+        try {
+            // throw error if name is empty
+            if (this.name.length === 0) {
+                throw new Error("Task name cannot be empty")
+            }
+            // update via api
+            const res = await apiRequest(`/jobs/${this.job}/tasks/create`, this, 'POST', true)
+            if (!res.ok) {
+                throw new Error(`Unable to create task: HTTP ${res.status} - ${res.text()}`)
+            }
+            // return new Task for local usage
+            const json = await res.json() 
+            return new Task({...json})
+        } catch (error) {
+            console.error("Error creating task: ", error)
+            throw error
+        }
+    }
+    // method for editing task via api
+    async edit(): Promise<Task> {
+        try {
+            // throw error if it has no id
+            if (!this.id) {
+                throw new Error("This task does not have an ID and likely needs to be created before it can be updated")
+            }
+            // throw error if name is empty
+            if (this.name.length === 0) {
+                throw new Error("Task name cannot be empty")
+            }
+            // update via api
+            const res = await apiRequest(`/jobs/${this.job}/tasks/edit`, this, 'POST', true)
+            if (!res.ok) {
+                throw new Error(`Unable to edit task: HTTP ${res.status} - ${res.text()}`)
+            }
+            // return new Task for local usage
+            const json = await res.json() 
+            return new Task({...json})
+        } catch (error) {
+            console.error("Error editing task: ", error)
+            throw error
+        }
+    }
     // method for marking task complete via api
     async markComplete(): Promise<void> {
         try {
-            console.log(this)
             // throw error if it has no id
             if (!this.id) {
                 throw new Error("This task does not have an ID and likely needs to be created before it can be updated")
