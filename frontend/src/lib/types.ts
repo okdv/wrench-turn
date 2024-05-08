@@ -89,7 +89,7 @@ export class Task {
         this.updatedAt = task.updatedAt
     }
     // method for creating task via api
-    async create(): Promise<Task> {
+    async Create(): Promise<Task> {
         try {
             // throw error if name is empty
             if (this.name.length === 0) {
@@ -109,7 +109,7 @@ export class Task {
         }
     }
     // method for editing task via api
-    async edit(): Promise<Task> {
+    async Edit(): Promise<Task> {
         try {
             // throw error if it has no id
             if (!this.id) {
@@ -133,7 +133,7 @@ export class Task {
         }
     }
     // method for marking task complete via api
-    async markComplete(): Promise<void> {
+    async MarkComplete(): Promise<void> {
         try {
             // throw error if it has no id
             if (!this.id) {

@@ -57,7 +57,8 @@
         tasks = newTasks
     }
 
-    const handleEditTaskSave = async(task: Task, i?: number) => {
+    // call edit task method and update tasks array 
+    const handleEditTask = async(task: Task, i?: number) => {
         if (!i) {
             alert("Task was saved, but its index is unknown, please refresh")
             return 
@@ -71,7 +72,7 @@
     const handleToggleTask = async(task: Task, i: number) => {
         const newTasks = tasks
         task = new Task(task)
-        await task.markComplete()
+        await task.MarkComplete()
         newTasks[i] = task
         tasks = newTasks
     }
@@ -245,7 +246,7 @@
             <TaskForm jobId={Number($page.params.id)} handleSave={handleNewTaskSave} />
             {#each tasks as task, i}
                 {#if editTaskIdx === i} 
-                    <TaskForm jobId={task.job} task={task} i={i} handleSave={handleEditTaskSave} handleCancel={() => editTaskIdx = null} handleDeleteCallback={() => {
+                    <TaskForm jobId={task.job} task={task} i={i} handleSave={handleEditTask} handleCancel={() => editTaskIdx = null} handleDeleteCallback={() => {
                         tasks.splice(i, 1)
                         tasks = tasks
                         editTaskIdx = null;
