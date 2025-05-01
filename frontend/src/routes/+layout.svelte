@@ -22,7 +22,7 @@
     <a href="{isLoggedIn ? "/dash" : "/"}">
       <h1 class="text-xl">WrenchTurn</h1>
     </a>
-    <div class="flex justify-around">
+    <div class="flex justify-around p-4 bg-white border-2 border-blue-500 rounded-md">
       <a href="/users" class="p-2">Users</a>
       <a href="/jobs" class="p-2">Jobs</a>
       <a href="/vehicles" class="p-2">Vehicles</a>
@@ -35,7 +35,7 @@
     </div>
   </div>
   <slot />
-  <div class="text-center">
+  <div class="text-center fixed bottom-0 right-0 left-0">
     <p class="text-center inline-block p-2 mr-2">Powered by WrenchTurn {version}</p>
     &bull;
     <a href="https://github.com/okdv/wrench-turn" class="inline-block p-2 ml-2 text-link">
