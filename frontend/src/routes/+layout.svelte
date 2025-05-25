@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getEnv, verifyToken } from "$lib/api";
     import "../app.css";
+    import {page} from '$app/stores';
 
     let isLoggedIn = false
     let version = ''
@@ -18,19 +19,30 @@
     init()
   </script>
   
-  <div class="flex justify-between p-2">
-    <a href="{isLoggedIn ? "/dash" : "/"}">
-      <h1 class="text-xl">WrenchTurn</h1>
+  <svelte:head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=home">
+  </svelte:head>
+
+
+  <div class="flex justify-between p-2 m-2 border-2 border-blue-500 rounded-md">
+    {#if $page.url.pathname !== "/"}
+    <a href = '/'>
+      <span class="material-symbols-outlined">home</span>
     </a>
-    <div class="flex justify-around p-4 bg-white border-2 border-blue-500 rounded-md">
-      <a href="/users" class="p-2">Users</a>
-      <a href="/jobs" class="p-2">Jobs</a>
-      <a href="/vehicles" class="p-2">Vehicles</a>
+    {/if}
+
+    <a href="{isLoggedIn ? "/dash" : "/"}">
+      <h1 class="text-xl" class:hide = {$page.url.pathname !== '/'}>WrenchTurn</h1>
+    </a>
+    <div class="flex justify-around bg-white space-x-1">
+      <a href="/users" class="p-2 border-2 border-blue-500 rounded-md" >Users</a>
+      <a href="/jobs" class="p-2 border-2 border-blue-500 rounded-md">Jobs</a>
+      <a href="/vehicles" class="p-2 border-2 border-blue-500 rounded-md">Vehicles</a>
       {#if isLoggedIn}
-        <a href="/settings" class="p-2">Settings</a>
+        <a href="/settings" class="p-2 border-2 border-blue-500 rounded-md">Settings</a>
       {:else}
-        <a href="/login" class="p-2">Login</a>
-        <a href="/join" class="p-2">Join</a>
+        <a href="/login" class="p-2 border-2 border-blue-500 rounded-md">Login</a>
+        <a href="/join" class="p-2 border-2 border-blue-500 rounded-md">Join</a>
       {/if}
     </div>
   </div>
